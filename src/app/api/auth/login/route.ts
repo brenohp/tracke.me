@@ -7,7 +7,6 @@ import prisma from '@/lib/prisma';
 
 export async function POST(request: Request) {
   try {
-    // 1. Extrai email e senha do corpo da requisição
     const body = await request.json();
     const { email, password } = body;
 
@@ -18,47 +17,45 @@ export async function POST(request: Request) {
       );
     }
 
-    // 2. Procura o usuário no banco de dados pelo email
     const user = await prisma.user.findUnique({
       where: { email },
     });
 
-    // Se o usuário não for encontrado, a senha não é verificada
     if (!user) {
       return NextResponse.json(
-        { message: 'Credenciais inválidas.' }, // Mensagem genérica por segurança
-        { status: 401 } // Unauthorized
-      );
-    }
-
-    // 3. Compara a senha enviada com a senha criptografada no banco
-    const isPasswordCorrect = await bcrypt.compare(password, user.password);
-
-    if (!isPasswordCorrect) {
-      return NextResponse.json(
-        { message: 'Credenciais inválidas.' }, // Mesma mensagem genérica
+        { message: 'Credenciais inválidas.' },
         { status: 401 }
       );
     }
 
-    // 4. Se a senha estiver correta, gera o token JWT
+    const isPasswordCorrect = await bcrypt.compare(password, user.password);
+
+    if (!isPasswordCorrect) {
+      return NextResponse.json(
+        { message: 'Credenciais inválidas.' },
+        { status: 401 }
+      );
+    }
+
     if (!process.env.JWT_SECRET) {
       throw new Error('A chave secreta JWT não está definida.');
     }
 
+    // --- MUDANÇA PRINCIPAL AQUI ---
+    // O payload do token agora inclui o businessId
     const token = jwt.sign(
       {
         userId: user.id,
+        businessId: user.businessId, // <-- INFORMAÇÃO CRUCIAL ADICIONADA
         email: user.email,
         role: user.role,
       },
       process.env.JWT_SECRET,
       {
-        expiresIn: '1d', // O token expira em 1 dia
+        expiresIn: '1d',
       }
     );
 
-    // 5. Retorna o token para o cliente
     return NextResponse.json({ token }, { status: 200 });
 
   } catch (error) {
