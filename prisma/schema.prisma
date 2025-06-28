@@ -1,0 +1,55 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DATABASE_URL_UNPOOLED")
+}
+
+// Define uma "enumeração" para os tipos de função do usuário.
+// Isso garante que um usuário só possa ter um desses papéis.
+enum Role {
+  ADMIN // Administrador do sistema (pode ser você ou um funcionário da InovaRiber)
+  OWNER // O dono do negócio (ex: dono do salão, da barbearia)
+  EMPLOYEE // Funcionario (ex: cabeleireiro, recepcionista, manicuri)
+}
+
+// Define o modelo para a tabela de Usuários
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role     @default(OWNER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // --- Nova linha para o relacionamento ---
+  // Um usuário pode ter uma lista de muitos serviços.
+  services  Service[]
+}
+
+// Define o modelo para a tabela de Serviços
+model Service {
+  id          String   @id @default(cuid())
+  name        String   // Ex: "Corte Masculino", "Manicure e Pedicure"
+  description String?  // O '?' indica que este campo é opcional
+  price       Decimal  // Usamos Decimal para valores monetários para evitar erros de precisão
+  duration    Int      // Duração do serviço em minutos (ex: 30, 45, 60)
+
+  // --- Relacionamento com o Usuário ---
+  // Este serviço pertence a um usuário específico.
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
