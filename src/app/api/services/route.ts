@@ -46,3 +46,40 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: 'Ocorreu um erro no servidor.' }, { status: 500 });
   }
 }
+
+// Nova função para lidar com requisições GET para /api/services
+export async function GET(request: Request) {
+  // 1. Protegendo a rota, exatamente como fizemos no POST
+  const authorization = request.headers.get('authorization');
+  if (!authorization || !authorization.startsWith('Bearer ')) {
+    return NextResponse.json({ message: 'Token de autorização ausente ou malformatado.' }, { status: 401 });
+  }
+  const token = authorization.split(' ')[1];
+  const session = verifyToken(token);
+
+  if (!session) {
+    return NextResponse.json({ message: 'Não autorizado. Token inválido ou expirado.' }, { status: 401 });
+  }
+
+  try {
+    // 2. Busca no banco TODOS os serviços ONDE o userId é igual ao do usuário logado
+    const services = await prisma.service.findMany({
+      where: {
+        userId: session.userId, // Este filtro é a chave para a segurança dos dados!
+      },
+      orderBy: {
+        createdAt: 'desc', // Opcional: ordena os serviços do mais novo para o mais antigo
+      },
+    });
+
+    // 3. Retorna a lista de serviços encontrados
+    return NextResponse.json(services, { status: 200 });
+
+  } catch (error) {
+    console.error('Erro ao listar serviços:', error);
+    return NextResponse.json(
+      { message: 'Ocorreu um erro no servidor.' },
+      { status: 500 }
+    );
+  }
+}

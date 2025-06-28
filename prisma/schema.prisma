@@ -35,6 +35,7 @@ model User {
   // --- Nova linha para o relacionamento ---
   // Um usuário pode ter uma lista de muitos serviços.
   services  Service[]
+  services Client[]
 }
 
 // Define o modelo para a tabela de Serviços
@@ -52,4 +53,19 @@ model Service {
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+// Define o modelo para a tabela de Clientes dos usuários
+model Client {
+  id    String  @id @default(cuid())
+  name  String
+  phone String? // Telefone de contato, opcional
+  email String? // Email do cliente, opcional
+
+  // Relacionamento: Este cliente pertence a um usuário (profissional/dono)
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
