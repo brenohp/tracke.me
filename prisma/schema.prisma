@@ -35,7 +35,8 @@ model User {
   // --- Nova linha para o relacionamento ---
   // Um usuário pode ter uma lista de muitos serviços.
   services  Service[]
-  services Client[]
+  clients Client[]
+  appointments Appointment[]
 }
 
 // Define o modelo para a tabela de Serviços
@@ -50,6 +51,7 @@ model Service {
   // Este serviço pertence a um usuário específico.
   userId      String
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  appointments Appointment[]
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -65,6 +67,39 @@ model Client {
   // Relacionamento: Este cliente pertence a um usuário (profissional/dono)
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  appointments Appointment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Enum para os possíveis status de um agendamento
+enum AppointmentStatus {
+  SCHEDULED // Agendado
+  COMPLETED // Concluído
+  CANCELED  // Cancelado pelo cliente ou profissional
+  NO_SHOW   // O cliente não compareceu
+}
+
+// Define o modelo para a tabela de Agendamentos
+model Appointment {
+  id        String   @id @default(cuid())
+  startTime DateTime // Data e hora de início do agendamento
+  endTime   DateTime
+  status    AppointmentStatus @default(SCHEDULED)
+
+  // --- Relacionamentos ---
+  // Um agendamento pertence a um cliente
+  clientId String
+  client   Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  // Um agendamento é para um serviço específico
+  serviceId String
+  service   Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  // Um agendamento é realizado por um profissional (usuário)
+  professionalId String
+  professional   User    @relation(fields: [professionalId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
