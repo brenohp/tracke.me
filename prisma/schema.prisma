@@ -37,6 +37,8 @@ model User {
   services  Service[]
   clients Client[]
   appointments Appointment[]
+  availabilities Availability[] 
+  timeOffs      TimeOff[]     
 }
 
 // Define o modelo para a tabela de Serviços
@@ -103,4 +105,28 @@ model Appointment {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+// Modelo para a jornada de trabalho semanal e recorrente do profissional
+model Availability {
+  id        String @id @default(cuid())
+  dayOfWeek Int    // Dia da semana (0 = Domingo, 1 = Segunda, ..., 6 = Sábado)
+  startTime String // Horário de início no formato "HH:mm" (ex: "09:00")
+  endTime   String // Horário de término no formato "HH:mm" (ex: "18:00")
+
+  // Relacionamento: pertence a um profissional (usuário)
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// Modelo para bloqueios específicos de data e hora (férias, folgas, etc.)
+model TimeOff {
+  id        String   @id @default(cuid())
+  startTime DateTime // Início do período de bloqueio
+  endTime   DateTime // Fim do período de bloqueio
+  reason    String?  // Motivo do bloqueio (opcional)
+
+  // Relacionamento: pertence a um profissional (usuário)
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
