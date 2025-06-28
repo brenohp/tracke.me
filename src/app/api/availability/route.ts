@@ -1,12 +1,9 @@
 // src/app/api/availability/route.ts
-
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { verifyToken } from '@/lib/session';
 
-// Função para BUSCAR a jornada de trabalho semanal do profissional
 export async function GET(request: Request) {
-  // Bloco de autenticação CORRIGIDO
   const authHeader = request.headers.get('authorization');
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return NextResponse.json({ message: 'Não autorizado.' }, { status: 401 });
@@ -31,9 +28,7 @@ export async function GET(request: Request) {
   }
 }
 
-// Função para DEFINIR ou ATUALIZAR a jornada de trabalho semanal completa
 export async function POST(request: Request) {
-  // Bloco de autenticação CORRIGIDO
   const authHeader = request.headers.get('authorization');
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return NextResponse.json({ message: 'Não autorizado.' }, { status: 401 });
@@ -51,13 +46,12 @@ export async function POST(request: Request) {
     if (!Array.isArray(body)) {
       return NextResponse.json({ message: 'O corpo da requisição deve ser um array.' }, { status: 400 });
     }
-    
+
     const dataToCreate = body.map(slot => ({
       ...slot,
       userId: session.userId,
     }));
 
-    // Transação para deletar o antigo e criar o novo. Variável 'result' removida.
     await prisma.$transaction([
       prisma.availability.deleteMany({ where: { userId: session.userId } }),
       prisma.availability.createMany({

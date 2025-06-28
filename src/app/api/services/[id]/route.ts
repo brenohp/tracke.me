@@ -1,49 +1,40 @@
 // src/app/api/services/[id]/route.ts
-
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { verifyToken } from '@/lib/session';
 
 interface RouteContext {
-  params: {
-    id: string;
-  };
+  params: { id: string };
 }
 
-// Função para ATUALIZAR um serviço existente
 export async function PUT(request: Request, { params }: RouteContext) {
   const serviceId = params.id;
-  
-  // Bloco de autenticação CORRIGIDO
+
+  // Bloco de Autenticação CORRIGIDO
   const authHeader = request.headers.get('authorization');
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return NextResponse.json({ message: 'Token de autorização ausente ou malformatado.' }, { status: 401 });
+    return NextResponse.json({ message: 'Não autorizado.' }, { status: 401 });
   }
   const token = authHeader.split(' ')[1];
   const session = verifyToken(token);
-
-  if (!session) {
-    return NextResponse.json({ message: 'Não autorizado. Token inválido ou expirado.' }, { status: 401 });
+  
+  if (!session || !session.businessId) {
+    return NextResponse.json({ message: 'Não autorizado ou token inválido.' }, { status: 401 });
   }
 
   try {
-    const service = await prisma.service.findUnique({
-      where: { id: serviceId },
+    const service = await prisma.service.findFirst({
+      where: { id: serviceId, businessId: session.businessId },
     });
 
-    if (!service || service.userId !== session.userId) {
+    if (!service) {
       return NextResponse.json({ message: 'Serviço não encontrado ou acesso negado.' }, { status: 404 });
     }
 
     const body = await request.json();
     const updatedService = await prisma.service.update({
       where: { id: serviceId },
-      data: {
-        name: body.name,
-        description: body.description,
-        price: body.price,
-        duration: body.duration,
-      },
+      data: { name: body.name, description: body.description, price: body.price, duration: body.duration },
     });
 
     return NextResponse.json(updatedService, { status: 200 });
@@ -53,28 +44,27 @@ export async function PUT(request: Request, { params }: RouteContext) {
   }
 }
 
-// Função para DELETAR um serviço existente
 export async function DELETE(request: Request, { params }: RouteContext) {
   const serviceId = params.id;
 
-  // Bloco de autenticação CORRIGIDO
+  // Bloco de Autenticação CORRIGIDO
   const authHeader = request.headers.get('authorization');
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return NextResponse.json({ message: 'Token de autorização ausente ou malformatado.' }, { status: 401 });
+    return NextResponse.json({ message: 'Não autorizado.' }, { status: 401 });
   }
   const token = authHeader.split(' ')[1];
   const session = verifyToken(token);
-
-  if (!session) {
-    return NextResponse.json({ message: 'Não autorizado. Token inválido ou expirado.' }, { status: 401 });
+  
+  if (!session || !session.businessId) {
+    return NextResponse.json({ message: 'Não autorizado ou token inválido.' }, { status: 401 });
   }
 
   try {
-    const service = await prisma.service.findUnique({
-      where: { id: serviceId },
+    const service = await prisma.service.findFirst({
+      where: { id: serviceId, businessId: session.businessId },
     });
 
-    if (!service || service.userId !== session.userId) {
+    if (!service) {
       return NextResponse.json({ message: 'Serviço não encontrado ou acesso negado.' }, { status: 404 });
     }
 

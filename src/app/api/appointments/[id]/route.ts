@@ -7,11 +7,10 @@ interface RouteContext {
   params: { id: string };
 }
 
-// Função para ATUALIZAR um agendamento
 export async function PUT(request: Request, { params }: RouteContext) {
   const appointmentId = params.id;
   
-  // Bloco de autenticação CORRIGIDO E FINAL
+  // Bloco de Autenticação CORRIGIDO
   const authHeader = request.headers.get('authorization');
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return NextResponse.json({ message: 'Token de autorização ausente ou malformatado.' }, { status: 401 });
@@ -20,12 +19,12 @@ export async function PUT(request: Request, { params }: RouteContext) {
   const session = verifyToken(token);
 
   if (!session) {
-    return NextResponse.json({ message: 'Não autorizado. Token inválido ou expirado.' }, { status: 401 });
+    return NextResponse.json({ message: 'Não autorizado ou token inválido.' }, { status: 401 });
   }
 
   try {
     const appointment = await prisma.appointment.findFirst({
-      where: { id: appointmentId, professionalId: session.userId },
+      where: { id: appointmentId, professionalId: session.userId }
     });
     
     if (!appointment) {
@@ -47,11 +46,10 @@ export async function PUT(request: Request, { params }: RouteContext) {
   }
 }
 
-// Função para CANCELAR um agendamento
 export async function DELETE(request: Request, { params }: RouteContext) {
   const appointmentId = params.id;
 
-  // Bloco de autenticação CORRIGIDO E FINAL
+  // Bloco de Autenticação CORRIGIDO
   const authHeader = request.headers.get('authorization');
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return NextResponse.json({ message: 'Token de autorização ausente ou malformatado.' }, { status: 401 });
@@ -60,12 +58,12 @@ export async function DELETE(request: Request, { params }: RouteContext) {
   const session = verifyToken(token);
 
   if (!session) {
-    return NextResponse.json({ message: 'Não autorizado. Token inválido ou expirado.' }, { status: 401 });
+    return NextResponse.json({ message: 'Não autorizado ou token inválido.' }, { status: 401 });
   }
 
   try {
     const appointment = await prisma.appointment.findFirst({
-      where: { id: appointmentId, professionalId: session.userId },
+      where: { id: appointmentId, professionalId: session.userId }
     });
     
     if (!appointment) {

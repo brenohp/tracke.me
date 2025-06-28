@@ -7,24 +7,20 @@ interface RouteContext {
   params: { id: string };
 }
 
-// Função para DELETAR um bloqueio de horário
 export async function DELETE(request: Request, { params }: RouteContext) {
   const timeOffId = params.id;
-
-  // Bloco de autenticação CORRIGIDO
   const authHeader = request.headers.get('authorization');
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return NextResponse.json({ message: 'Token de autorização ausente ou malformatado.' }, { status: 401 });
+    return NextResponse.json({ message: 'Não autorizado.' }, { status: 401 });
   }
   const token = authHeader.split(' ')[1];
   const session = verifyToken(token);
 
   if (!session) {
-    return NextResponse.json({ message: 'Não autorizado. Token inválido ou expirado.' }, { status: 401 });
+    return NextResponse.json({ message: 'Token inválido ou expirado.' }, { status: 401 });
   }
 
   try {
-    // Medida de segurança para garantir que o usuário só pode deletar seus próprios bloqueios
     const timeOff = await prisma.timeOff.findFirst({
       where: { id: timeOffId, userId: session.userId },
     });

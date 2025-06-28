@@ -10,22 +10,24 @@ interface RouteContext {
 // Função para ATUALIZAR um cliente
 export async function PUT(request: Request, { params }: RouteContext) {
   const clientId = params.id;
-  
-  // Bloco de autenticação CORRIGIDO
   const authHeader = request.headers.get('authorization');
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return NextResponse.json({ message: 'Token de autorização ausente ou malformatado.' }, { status: 401 });
+    return NextResponse.json({ message: 'Não autorizado.' }, { status: 401 });
   }
   const token = authHeader.split(' ')[1];
   const session = verifyToken(token);
 
-  if (!session) {
-    return NextResponse.json({ message: 'Não autorizado. Token inválido ou expirado.' }, { status: 401 });
+  if (!session || !session.businessId) {
+    return NextResponse.json({ message: 'Token inválido ou expirado.' }, { status: 401 });
   }
 
   try {
-    const client = await prisma.client.findUnique({ where: { id: clientId } });
-    if (!client || client.userId !== session.userId) {
+    // Agora verificamos se o cliente pertence ao NEGÓCIO do usuário
+    const client = await prisma.client.findFirst({
+      where: { id: clientId, businessId: session.businessId }, // <-- LÓGICA ATUALIZADA
+    });
+
+    if (!client) {
       return NextResponse.json({ message: 'Cliente não encontrado ou acesso negado.' }, { status: 404 });
     }
 
@@ -49,22 +51,23 @@ export async function PUT(request: Request, { params }: RouteContext) {
 // Função para DELETAR um cliente
 export async function DELETE(request: Request, { params }: RouteContext) {
   const clientId = params.id;
-
-  // Bloco de autenticação CORRIGIDO
   const authHeader = request.headers.get('authorization');
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return NextResponse.json({ message: 'Token de autorização ausente ou malformatado.' }, { status: 401 });
+    return NextResponse.json({ message: 'Não autorizado.' }, { status: 401 });
   }
   const token = authHeader.split(' ')[1];
   const session = verifyToken(token);
 
-  if (!session) {
-    return NextResponse.json({ message: 'Não autorizado. Token inválido ou expirado.' }, { status: 401 });
+  if (!session || !session.businessId) {
+    return NextResponse.json({ message: 'Token inválido ou expirado.' }, { status: 401 });
   }
 
   try {
-    const client = await prisma.client.findUnique({ where: { id: clientId } });
-    if (!client || client.userId !== session.userId) {
+    const client = await prisma.client.findFirst({
+      where: { id: clientId, businessId: session.businessId }, // <-- LÓGICA ATUALIZADA
+    });
+
+    if (!client) {
       return NextResponse.json({ message: 'Cliente não encontrado ou acesso negado.' }, { status: 404 });
     }
 

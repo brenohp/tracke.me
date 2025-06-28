@@ -12,7 +12,7 @@ export async function POST(request: Request) {
   const token = authHeader.split(' ')[1];
   const session = verifyToken(token);
 
-  if (!session) {
+  if (!session || !session.businessId) {
     return NextResponse.json({ message: 'Token inválido ou expirado.' }, { status: 401 });
   }
 
@@ -29,7 +29,7 @@ export async function POST(request: Request) {
         name,
         phone,
         email,
-        userId: session.userId, // Associa o cliente ao usuário logado
+        businessId: session.businessId, // <-- LÓGICA ATUALIZADA
       },
     });
 
@@ -40,7 +40,7 @@ export async function POST(request: Request) {
   }
 }
 
-// Função para LISTAR todos os clientes do usuário logado
+// Função para LISTAR todos os clientes do negócio
 export async function GET(request: Request) {
   const authHeader = request.headers.get('authorization');
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -49,17 +49,17 @@ export async function GET(request: Request) {
   const token = authHeader.split(' ')[1];
   const session = verifyToken(token);
 
-  if (!session) {
+  if (!session || !session.businessId) {
     return NextResponse.json({ message: 'Token inválido ou expirado.' }, { status: 401 });
   }
 
   try {
     const clients = await prisma.client.findMany({
       where: {
-        userId: session.userId, // Filtro de segurança essencial!
+        businessId: session.businessId, // <-- LÓGICA ATUALIZADA
       },
       orderBy: {
-        name: 'asc', // Ordena por nome em ordem alfabética
+        name: 'asc',
       },
     });
 

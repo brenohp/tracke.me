@@ -4,18 +4,16 @@ import prisma from '@/lib/prisma';
 import { verifyToken } from '@/lib/session';
 import { parseISO } from 'date-fns';
 
-// Função para ADICIONAR um novo bloqueio de horário (férias, folga, etc.)
 export async function POST(request: Request) {
-  // Bloco de autenticação CORRIGIDO
   const authHeader = request.headers.get('authorization');
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return NextResponse.json({ message: 'Token de autorização ausente ou malformatado.' }, { status: 401 });
+    return NextResponse.json({ message: 'Não autorizado.' }, { status: 401 });
   }
   const token = authHeader.split(' ')[1];
   const session = verifyToken(token);
 
   if (!session) {
-    return NextResponse.json({ message: 'Não autorizado. Token inválido ou expirado.' }, { status: 401 });
+    return NextResponse.json({ message: 'Token inválido ou expirado.' }, { status: 401 });
   }
 
   try {
@@ -42,9 +40,7 @@ export async function POST(request: Request) {
   }
 }
 
-// Função para LISTAR todos os bloqueios de horário do profissional
 export async function GET(request: Request) {
-  // Bloco de autenticação CORRIGIDO
   const authHeader = request.headers.get('authorization');
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return NextResponse.json({ message: 'Não autorizado.' }, { status: 401 });
