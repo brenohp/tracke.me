@@ -18,6 +18,7 @@ datasource db {
 model Business {
   id     String @id @default(cuid())
   name   String // Nome do negócio, ex: "Salão da Maria"
+  phone  String?
   plan   String @default("TRIAL") // Plano de assinatura: TRIAL, PRO, etc.
   status String @default("ACTIVE") // Status da assinatura: ACTIVE, CANCELED
 

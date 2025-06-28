@@ -1,5 +1,4 @@
 // src/app/api/auth/register/route.ts
-
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
@@ -7,11 +6,12 @@ import bcrypt from 'bcryptjs';
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { businessName, ownerName, email, password } = body;
+    // Adicionamos 'phone' à extração dos dados
+    const { businessName, ownerName, email, password, phone } = body;
 
     if (!businessName || !ownerName || !email || !password) {
       return NextResponse.json(
-        { message: 'Todos os campos são obrigatórios: nome do negócio, seu nome, email e senha.' },
+        { message: 'Nome do negócio, seu nome, email e senha são obrigatórios.' },
         { status: 400 }
       );
     }
@@ -33,6 +33,7 @@ export async function POST(request: Request) {
       const newBusiness = await tx.business.create({
         data: {
           name: businessName,
+          phone, // <-- CAMPO ADICIONADO AQUI
         },
       });
 
@@ -49,7 +50,6 @@ export async function POST(request: Request) {
       return newOwner;
     });
 
-    // Bloco Corrigido: Cria um objeto de retorno explícito sem a senha
     const userToReturn = {
         id: newUser.id,
         name: newUser.name,
