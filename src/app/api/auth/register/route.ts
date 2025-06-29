@@ -1,39 +1,51 @@
 // src/app/api/auth/register/route.ts
+
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 
 export async function POST(request: Request) {
   try {
+    // 1. Extrai o novo campo 'subdomain' do corpo da requisição
     const body = await request.json();
-    // Adicionamos 'phone' à extração dos dados
-    const { businessName, ownerName, email, password, phone } = body;
+    const { businessName, ownerName, email, password, phone, subdomain } = body;
 
-    if (!businessName || !ownerName || !email || !password) {
+    if (!businessName || !ownerName || !email || !password || !subdomain) {
       return NextResponse.json(
-        { message: 'Nome do negócio, seu nome, email e senha são obrigatórios.' },
+        { message: 'Todos os campos, incluindo o subdomínio, são obrigatórios.' },
         { status: 400 }
       );
     }
 
-    const existingUser = await prisma.user.findUnique({
-      where: { email },
-    });
-
-    if (existingUser) {
+    // 2. Validação do formato do subdomínio (letras minúsculas, números e hífens)
+    const subdomainRegex = /^[a-z0-9-]+$/;
+    if (!subdomainRegex.test(subdomain)) {
       return NextResponse.json(
-        { message: 'Este e-mail já está em uso.' },
-        { status: 409 }
+        { message: 'Subdomínio inválido. Use apenas letras minúsculas, números e hífens.' },
+        { status: 400 }
       );
     }
+    
+    // 3. Verifica se o e-mail ou o subdomínio já estão em uso
+    const existingUser = await prisma.user.findUnique({ where: { email } });
+    const existingBusiness = await prisma.business.findUnique({ where: { subdomain } });
 
+    if (existingUser) {
+      return NextResponse.json({ message: 'Este e-mail já está em uso.' }, { status: 409 });
+    }
+    if (existingBusiness) {
+      return NextResponse.json({ message: 'Este subdomínio já está em uso. Por favor, escolha outro.' }, { status: 409 });
+    }
+
+    // O resto da lógica continua igual...
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const newUser = await prisma.$transaction(async (tx) => {
       const newBusiness = await tx.business.create({
         data: {
           name: businessName,
-          phone, // <-- CAMPO ADICIONADO AQUI
+          phone,
+          subdomain, // <-- CAMPO ADICIONADO AQUI
         },
       });
 

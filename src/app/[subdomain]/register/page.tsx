@@ -12,16 +12,15 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 
 export default function RegisterPage() {
-  // Estados para todos os campos do formulário
   const [businessName, setBusinessName] = useState('');
   const [ownerName, setOwnerName] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [subdomain, setSubdomain] = useState(''); // <-- 1. Novo estado para o subdomínio
   const [termsAccepted, setTermsAccepted] = useState(false);
   
-  // Estados para controle da UI
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -31,7 +30,6 @@ export default function RegisterPage() {
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    // Validação do lado do cliente para as senhas
     if (password !== confirmPassword) {
       toast.error('As senhas não coincidem.');
       return;
@@ -40,10 +38,11 @@ export default function RegisterPage() {
     setIsLoading(true);
 
     try {
+      // 2. Adiciona 'subdomain' ao corpo da requisição
       const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ businessName, ownerName, email, password, phone }),
+        body: JSON.stringify({ businessName, ownerName, email, password, phone, subdomain }),
       });
 
       const data = await response.json();
@@ -72,10 +71,28 @@ export default function RegisterPage() {
           
           <Input id="businessName" type="text" required value={businessName} onChange={(e) => setBusinessName(e.target.value)} placeholder="Nome do seu Negócio" />
           
+          {/* 3. Novo campo para o Subdomínio com dica de URL */}
+          <div>
+            <label htmlFor="subdomain" className="text-sm font-medium text-brand-primary">Endereço no Tracke.me</label>
+            <div className="flex items-center mt-1">
+              <Input
+                id="subdomain"
+                type="text"
+                required
+                value={subdomain}
+                onChange={(e) => setSubdomain(e.target.value.toLowerCase().replace(/\s+/g, '-'))}
+                placeholder="ex: barbearia-classica"
+                className="rounded-r-none"
+              />
+              <span className="inline-flex items-center px-3 text-sm text-gray-500 border border-l-0 border-gray-300 rounded-r-md bg-gray-50 h-10">
+                .tracke.me
+              </span>
+            </div>
+            <p className="mt-1 text-xs text-gray-500">Use apenas letras, números e hífens.</p>
+          </div>
+
           <Input id="ownerName" type="text" required value={ownerName} onChange={(e) => setOwnerName(e.target.value)} placeholder="Seu nome completo" />
-          
           <Input id="phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Telefone / WhatsApp (Opcional)" />
-          
           <Input id="email" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Seu melhor email" />
           
           <div className="relative">
@@ -93,13 +110,7 @@ export default function RegisterPage() {
           </div>
           
           <div className="flex items-center space-x-2 pt-2">
-            <input
-              type="checkbox"
-              id="terms"
-              checked={termsAccepted}
-              onChange={(e) => setTermsAccepted(e.target.checked)}
-              className="w-4 h-4 rounded text-brand-accent focus:ring-brand-accent-light border-gray-300"
-            />
+            <input type="checkbox" id="terms" checked={termsAccepted} onChange={(e) => setTermsAccepted(e.target.checked)} className="w-4 h-4 rounded text-brand-accent focus:ring-brand-accent-light border-gray-300"/>
             <label htmlFor="terms" className="text-sm text-gray-600 select-none">
               Eu li e concordo com os <a href="/terms" target="_blank" className="font-medium text-brand-accent hover:underline">Termos de Uso</a>.
             </label>

@@ -1,4 +1,4 @@
-// schema.prisma - Versão Multi-Tenant
+// schema.prisma - Versão Final e Correta
 
 generator client {
   provider = "prisma-client-js"
@@ -10,28 +10,22 @@ datasource db {
   directUrl = env("DATABASE_URL_UNPOOLED")
 }
 
-// ===============================================
-// NOVA ARQUITETURA MULTI-TENANT
-// ===============================================
-
-// NOVO MODELO: O "Inquilino" do nosso SaaS. Cada negócio é uma entrada aqui.
 model Business {
   id     String @id @default(cuid())
-  name   String // Nome do negócio, ex: "Salão da Maria"
+  name   String
   phone  String?
-  plan   String @default("TRIAL") // Plano de assinatura: TRIAL, PRO, etc.
-  status String @default("ACTIVE") // Status da assinatura: ACTIVE, CANCELED
+  plan   String @default("TRIAL")
+  status String @default("ACTIVE")
+  subdomain String @unique // <-- O CAMPO QUE FALTAVA NO SEU ARQUIVO
 
-  // Relacionamentos: Um negócio tem...
-  users     User[] // ... múltiplos usuários (dono e funcionários)
-  services  Service[] // ... múltiplos serviços
-  clients   Client[] // ... múltiplos clientes
+  users     User[]
+  services  Service[]
+  clients   Client[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
-// MODELO ATUALIZADO: Agora, cada usuário pertence a um negócio.
 model User {
   id       String   @id @default(cuid())
   name     String
@@ -39,21 +33,17 @@ model User {
   password String
   role     Role     @default(OWNER)
 
-  // Relacionamento MODIFICADO: Todo usuário pertence a um negócio
   businessId String
   business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
-  // Relacionamentos que permanecem ligados ao profissional individualmente
   availabilities Availability[]
   timeOffs       TimeOff[]
-  // A relação foi nomeada para evitar ambiguidade
   appointments   Appointment[]  @relation("ProfessionalAppointments")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
-// MODELO ATUALIZADO: Um serviço agora pertence a um negócio.
 model Service {
   id          String    @id @default(cuid())
   name        String
@@ -61,7 +51,6 @@ model Service {
   price       Decimal
   duration    Int
   
-  // Relacionamento MODIFICADO: Um serviço pertence a um negócio, não a um usuário
   businessId  String
   business    Business    @relation(fields: [businessId], references: [id], onDelete: Cascade)
   
@@ -71,14 +60,12 @@ model Service {
   updatedAt   DateTime  @updatedAt
 }
 
-// MODELO ATUALIZADO: Um cliente agora pertence a um negócio.
 model Client {
   id      String  @id @default(cuid())
   name    String
   phone   String?
   email   String?
   
-  // Relacionamento MODIFICADO: Um cliente pertence a um negócio
   businessId   String
   business     Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
@@ -88,14 +75,12 @@ model Client {
   updatedAt    DateTime    @updatedAt
 }
 
-// MODELO ATUALIZADO: Relacionamentos nomeados para clareza.
 model Appointment {
   id        String            @id @default(cuid())
   startTime DateTime
   endTime   DateTime
   status    AppointmentStatus @default(SCHEDULED)
 
-  // Relacionamentos
   clientId String
   client   Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
 
@@ -103,19 +88,15 @@ model Appointment {
   service   Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
   
   professionalId String
-  // A relação foi nomeada para evitar ambiguidade
   professional   User @relation("ProfessionalAppointments", fields: [professionalId], references: [id], onDelete: Cascade)
 
   createdAt DateTime          @default(now())
   updatedAt DateTime          @updatedAt
 }
 
-
-// --- Modelos de Suporte (sem mudanças) ---
-
 enum Role {
-  ADMIN // Super admin do SaaS (você)
-  OWNER // Dono do negócio
+  ADMIN
+  OWNER
   EMPLOYEE
 }
 
