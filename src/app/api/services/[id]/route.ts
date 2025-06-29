@@ -1,42 +1,37 @@
 // src/app/api/services/[id]/route.ts
-import { NextResponse } from 'next/server';
+import { NextResponse, type NextRequest } from 'next/server';
 import prisma from '@/lib/prisma';
 import { verifyToken } from '@/lib/session';
+import { parse } from 'cookie';
 
 interface RouteContext {
   params: { id: string };
 }
 
-export async function PUT(request: Request, { params }: RouteContext) {
-  const serviceId = params.id;
+function getSessionFromRequest(request: NextRequest) {
+  const cookieHeader = request.headers.get('cookie');
+  if (!cookieHeader) return null;
+  const cookies = parse(cookieHeader);
+  return verifyToken(cookies.token || '');
+}
 
-  // Bloco de Autenticação CORRIGIDO
-  const authHeader = request.headers.get('authorization');
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return NextResponse.json({ message: 'Não autorizado.' }, { status: 401 });
-  }
-  const token = authHeader.split(' ')[1];
-  const session = verifyToken(token);
+export async function PUT(request: NextRequest, { params }: RouteContext) {
+  const serviceId = params.id;
+  const session = getSessionFromRequest(request);
   
   if (!session || !session.businessId) {
-    return NextResponse.json({ message: 'Não autorizado ou token inválido.' }, { status: 401 });
+    return NextResponse.json({ message: 'Não autorizado.' }, { status: 401 });
   }
 
+  // ... (o resto da lógica PUT continua)
   try {
-    const service = await prisma.service.findFirst({
-      where: { id: serviceId, businessId: session.businessId },
-    });
-
-    if (!service) {
-      return NextResponse.json({ message: 'Serviço não encontrado ou acesso negado.' }, { status: 404 });
-    }
-
+    const service = await prisma.service.findFirst({ where: { id: serviceId, businessId: session.businessId } });
+    if (!service) { return NextResponse.json({ message: 'Serviço não encontrado ou acesso negado.' }, { status: 404 }); }
     const body = await request.json();
     const updatedService = await prisma.service.update({
       where: { id: serviceId },
       data: { name: body.name, description: body.description, price: body.price, duration: body.duration },
     });
-
     return NextResponse.json(updatedService, { status: 200 });
   } catch (error) {
     console.error(`Erro ao atualizar serviço ${serviceId}:`, error);
@@ -44,34 +39,19 @@ export async function PUT(request: Request, { params }: RouteContext) {
   }
 }
 
-export async function DELETE(request: Request, { params }: RouteContext) {
+export async function DELETE(request: NextRequest, { params }: RouteContext) {
   const serviceId = params.id;
-
-  // Bloco de Autenticação CORRIGIDO
-  const authHeader = request.headers.get('authorization');
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return NextResponse.json({ message: 'Não autorizado.' }, { status: 401 });
-  }
-  const token = authHeader.split(' ')[1];
-  const session = verifyToken(token);
+  const session = getSessionFromRequest(request);
   
   if (!session || !session.businessId) {
-    return NextResponse.json({ message: 'Não autorizado ou token inválido.' }, { status: 401 });
+    return NextResponse.json({ message: 'Não autorizado.' }, { status: 401 });
   }
 
+  // ... (o resto da lógica DELETE continua)
   try {
-    const service = await prisma.service.findFirst({
-      where: { id: serviceId, businessId: session.businessId },
-    });
-
-    if (!service) {
-      return NextResponse.json({ message: 'Serviço não encontrado ou acesso negado.' }, { status: 404 });
-    }
-
-    await prisma.service.delete({
-      where: { id: serviceId },
-    });
-
+    const service = await prisma.service.findFirst({ where: { id: serviceId, businessId: session.businessId } });
+    if (!service) { return NextResponse.json({ message: 'Serviço não encontrado ou acesso negado.' }, { status: 404 }); }
+    await prisma.service.delete({ where: { id: serviceId } });
     return new NextResponse(null, { status: 204 });
   } catch (error) {
     console.error(`Erro ao deletar serviço ${serviceId}:`, error);
