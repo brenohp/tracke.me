@@ -1,8 +1,7 @@
-// src/contexts/SessionProvider.tsx
+// Caminho do arquivo: src/contexts/SessionProvider.tsx
 "use client";
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 
 interface User {
@@ -24,8 +23,7 @@ const SessionContext = createContext<SessionContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const router = useRouter();
-
+  
   useEffect(() => {
     const fetchUser = async () => {
       try {
@@ -36,7 +34,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } else {
           setUser(null);
         }
-      } catch { // <-- Variável 'error' removida aqui
+      } catch {
         setUser(null);
       } finally {
         setIsLoading(false);
@@ -50,8 +48,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await fetch('/api/auth/logout', { method: 'POST' });
       setUser(null);
       toast.success('Você saiu com sucesso!');
-      router.push('/login');
-    } catch { // <-- Variável 'error' removida aqui
+
+      // --- LÓGICA DE REDIRECIONAMENTO CORRIGIDA ---
+      const appDomain = process.env.NEXT_PUBLIC_APP_DOMAIN || 'localhost:3000';
+      const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
+      const loginUrl = `${protocol}://${appDomain}/login`;
+
+      // Redireciona a janela para a página de login no domínio principal
+      window.location.href = loginUrl;
+
+    } catch {
       toast.error('Ocorreu um erro ao sair.');
     }
   };
@@ -63,7 +69,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 }
 
-// Hook customizado para facilitar o uso do contexto
 export function useAuth() {
   const context = useContext(SessionContext);
   if (context === undefined) {

@@ -1,40 +1,40 @@
-// src/middleware.ts
-
+// Caminho do arquivo: src/middleware.ts
 import { NextRequest, NextResponse } from 'next/server';
 
 export const config = {
-  // O matcher agora pega todas as rotas, pois o middleware precisa
-  // decidir o que fazer baseado no hostname (subdomínio).
   matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
 };
 
 export function middleware(req: NextRequest) {
-  const url = req.nextUrl;
+  const url = req.nextUrl.clone();
   const hostname = req.headers.get('host')!;
-
-  // Define o domínio principal da aplicação. Em produção, será 'tracke.me'.
-  // Para desenvolvimento, usamos 'localhost:3000'.
-  const appDomain = 'localhost:3000'; 
-
-  // Extrai o subdomínio do hostname.
-  // Ex: de "negocio1.localhost:3000", extrai "negocio1".
-  const subdomain = hostname.replace(`.${appDomain}`, '');
   
-  // Se estiver no domínio principal (sem subdomínio), não fazemos nada.
-  // Deixamos o usuário acessar a home, login, register, etc.
+  const appDomain = process.env.NEXT_PUBLIC_APP_DOMAIN || 'lvh.me:3000';
+
+  // Permite o acesso ao domínio principal (lvh.me:3000)
   if (hostname === appDomain) {
     return NextResponse.next();
   }
 
-  // Se o caminho já for o do subdomínio (ex: /login), não reescrevemos.
-  if (url.pathname.startsWith(`/${subdomain}`)) {
+  // Lógica para SUBDOMÍNIOS
+  const subdomain = hostname.replace(`.${appDomain}`, '');
+  const path = url.pathname;
+
+  // Evita o loop de reescrita
+  if (path.startsWith(`/${subdomain}`)) {
     return NextResponse.next();
   }
+  
+  const token = req.cookies.get('token')?.value;
 
-  // Se chegou até aqui, significa que o usuário está em um subdomínio.
-  // Vamos reescrever a URL para que o Next.js entenda.
-  // Ex: Acessar "negocio1.localhost:3000/dashboard" será tratado internamente
-  // como se fosse "/negocio1/dashboard", permitindo usar layouts e páginas dinâmicas.
-  const newUrl = new URL(`/${subdomain}${url.pathname}`, req.url);
-  return NextResponse.rewrite(newUrl);
+  if (!token) {
+    // Se não há token, redireciona para o login no domínio principal
+    const protocol = req.nextUrl.protocol;
+    const loginUrl = new URL('/login', `${protocol}//${appDomain}`);
+    return NextResponse.redirect(loginUrl);
+  }
+
+  // Se há token, reescreve a URL para o Next.js encontrar a página
+  url.pathname = `/${subdomain}${path}`;
+  return NextResponse.rewrite(url);
 }

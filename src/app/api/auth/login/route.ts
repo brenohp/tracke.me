@@ -1,69 +1,57 @@
-// src/app/api/auth/login/route.ts
-
+// Caminho do arquivo: src/app/api/auth/login/route.ts
 import { NextResponse } from 'next/server';
+import prisma from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import prisma from '@/lib/prisma';
-import { serialize } from 'cookie'; // Importaremos uma função auxiliar
+import { serialize } from 'cookie';
+import { UserSession } from '@/lib/session';
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const { email, password } = body;
-
-    if (!email || !password) {
-      return NextResponse.json({ message: 'Email e senha são obrigatórios.' }, { status: 400 });
-    }
+    const { email, password } = await request.json();
 
     const user = await prisma.user.findUnique({
       where: { email },
+      include: { business: true },
     });
 
-    if (!user) {
+    if (!user || !user.business) {
       return NextResponse.json({ message: 'Credenciais inválidas.' }, { status: 401 });
     }
 
-    const isPasswordCorrect = await bcrypt.compare(password, user.password);
-
-    if (!isPasswordCorrect) {
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
       return NextResponse.json({ message: 'Credenciais inválidas.' }, { status: 401 });
     }
 
-    if (!process.env.JWT_SECRET) {
-      throw new Error('A chave secreta JWT não está definida.');
-    }
+    const sessionData: UserSession = {
+      userId: user.id,
+      businessId: user.businessId,
+      email: user.email,
+      role: user.role as 'ADMIN' | 'OWNER' | 'EMPLOYEE',
+    };
 
-    // O payload do token continua o mesmo
-    const token = jwt.sign(
-      {
-        userId: user.id,
-        businessId: user.businessId,
-        email: user.email,
-        role: user.role,
-      },
-      process.env.JWT_SECRET,
-      {
-        expiresIn: '1d',
-      }
-    );
-    
-    // --- MUDANÇA PRINCIPAL AQUI ---
-    // Em vez de retornar o token, vamos configurar o cookie
-    
-    // Serializa o cookie com as flags de segurança
+    const token = jwt.sign(sessionData, process.env.JWT_SECRET!, { expiresIn: '7d' });
+
+    // --- INÍCIO DA CORREÇÃO ---
+    // Remove a porta do domínio para o cookie
+    const appDomain = (process.env.NEXT_PUBLIC_APP_DOMAIN || 'lvh.me:3000').split(':')[0];
+    const domain = process.env.NODE_ENV === 'production' ? `.${appDomain}` : appDomain;
+
     const serializedCookie = serialize('token', token, {
-      httpOnly: true, // Impede acesso via JavaScript
-      secure: process.env.NODE_ENV === 'production', // Use https em produção
-      sameSite: 'strict', // Proteção contra ataques CSRF
-      maxAge: 60 * 60 * 24, // 1 dia em segundos
-      path: '/', // O cookie estará disponível em todo o site
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 60 * 60 * 24 * 7,
+      path: '/',
+      domain: domain, // <-- Agora está correto: 'lvh.me'
     });
-
-    // Cria a resposta com uma mensagem de sucesso e define o cabeçalho do cookie
-    const response = NextResponse.json(
-      { message: 'Login bem-sucedido.' },
-      { status: 200 }
-    );
+    // --- FIM DA CORREÇÃO ---
+    
+    const response = NextResponse.json({
+      message: 'Login bem-sucedido!',
+      subdomain: user.business.subdomain,
+    }, { status: 200 });
     
     response.headers.set('Set-Cookie', serializedCookie);
 
