@@ -1,4 +1,4 @@
-// schema.prisma - Versão Final e Correta
+// schema.prisma - Versão Final e Corrigida
 
 generator client {
   provider = "prisma-client-js"
@@ -11,12 +11,12 @@ datasource db {
 }
 
 model Business {
-  id     String @id @default(cuid())
-  name   String
-  phone  String?
-  plan   String @default("TRIAL")
-  status String @default("ACTIVE")
-  subdomain String @unique // <-- O CAMPO QUE FALTAVA NO SEU ARQUIVO
+  id        String @id @default(cuid())
+  name      String
+  phone     String?
+  plan      String @default("TRIAL")
+  status    String @default("ACTIVE")
+  subdomain String @unique
 
   users     User[]
   services  Service[]
@@ -36,6 +36,9 @@ model User {
   businessId String
   business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
+  // RELAÇÃO ADICIONADA: Quais serviços este profissional pode realizar
+  services       Service[]      @relation("ProfessionalsOnServices")
+
   availabilities Availability[]
   timeOffs       TimeOff[]
   appointments   Appointment[]  @relation("ProfessionalAppointments")
@@ -45,34 +48,38 @@ model User {
 }
 
 model Service {
-  id          String    @id @default(cuid())
-  name        String
-  description String?
-  price       Decimal
-  duration    Int
-  
-  businessId  String
-  business    Business    @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  
+  id                String        @id @default(cuid())
+  name              String
+  description       String?
+  price             Decimal       @db.Decimal(10, 2)
+  durationInMinutes Int // CAMPO RENOMEADO PARA MAIOR CLAREZA
+  status            ServiceStatus @default(ACTIVE) // CAMPO ADICIONADO
+
+  businessId String
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  // RELAÇÃO ADICIONADA: Quais profissionais podem realizar este serviço
+  professionals User[] @relation("ProfessionalsOnServices")
+
   appointments Appointment[]
 
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Client {
-  id      String  @id @default(cuid())
-  name    String
-  phone   String?
-  email   String?
-  
-  businessId   String
-  business     Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  id    String  @id @default(cuid())
+  name  String
+  phone String?
+  email String?
+
+  businessId String
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
   appointments Appointment[]
 
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Appointment {
@@ -86,25 +93,12 @@ model Appointment {
 
   serviceId String
   service   Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
-  
+
   professionalId String
   professional   User @relation("ProfessionalAppointments", fields: [professionalId], references: [id], onDelete: Cascade)
 
-  createdAt DateTime          @default(now())
-  updatedAt DateTime          @updatedAt
-}
-
-enum Role {
-  ADMIN
-  OWNER
-  EMPLOYEE
-}
-
-enum AppointmentStatus {
-  SCHEDULED
-  COMPLETED
-  CANCELED
-  NO_SHOW
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Availability {
@@ -122,5 +116,24 @@ model TimeOff {
   endTime   DateTime
   reason    String?
   userId    String
-  user      User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum Role {
+  ADMIN
+  OWNER
+  EMPLOYEE
+}
+
+enum AppointmentStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELED
+  NO_SHOW
+}
+
+// ENUM ADICIONADO para o status do serviço
+enum ServiceStatus {
+  ACTIVE
+  INACTIVE
 }
