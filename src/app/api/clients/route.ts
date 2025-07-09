@@ -1,24 +1,25 @@
-// src/app/api/clients/route.ts
+// Caminho: src/app/api/clients/route.ts
 import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers'; // Importa o helper de cookies
 import prisma from '@/lib/prisma';
 import { verifyToken } from '@/lib/session';
+import { revalidatePath } from 'next/cache';
 
-// Função para CADASTRAR um novo cliente
+// Função para CADASTRAR um novo cliente (CORRIGIDA)
 export async function POST(request: Request) {
-  const authHeader = request.headers.get('authorization');
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return NextResponse.json({ message: 'Não autorizado.' }, { status: 401 });
-  }
-  const token = authHeader.split(' ')[1];
-  const session = verifyToken(token);
+  // Lógica de autenticação corrigida para ler o cookie
+  const cookieStore = await cookies();
+  const token = cookieStore.get('token')?.value;
+  const session = verifyToken(token || '');
 
   if (!session || !session.businessId) {
-    return NextResponse.json({ message: 'Token inválido ou expirado.' }, { status: 401 });
+    return NextResponse.json({ message: 'Não autorizado.' }, { status: 401 });
   }
 
   try {
     const body = await request.json();
-    const { name, phone, email } = body;
+    // Adicionado o campo 'observations'
+    const { name, phone, email, observations } = body;
 
     if (!name) {
       return NextResponse.json({ message: 'O nome é obrigatório.' }, { status: 400 });
@@ -29,9 +30,13 @@ export async function POST(request: Request) {
         name,
         phone,
         email,
-        businessId: session.businessId, // <-- LÓGICA ATUALIZADA
+        observations,
+        businessId: session.businessId,
       },
     });
+    
+    // Revalida o cache da página de clientes para a lista atualizar
+    revalidatePath('/dashboard/clientes');
 
     return NextResponse.json(newClient, { status: 201 });
   } catch (error) {
@@ -40,23 +45,21 @@ export async function POST(request: Request) {
   }
 }
 
-// Função para LISTAR todos os clientes do negócio
-export async function GET(request: Request) {
-  const authHeader = request.headers.get('authorization');
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return NextResponse.json({ message: 'Não autorizado.' }, { status: 401 });
-  }
-  const token = authHeader.split(' ')[1];
-  const session = verifyToken(token);
+// Função para LISTAR todos os clientes (CORRIGIDA)
+export async function GET() {
+  // Lógica de autenticação corrigida para ler o cookie
+  const cookieStore = await cookies();
+  const token = cookieStore.get('token')?.value;
+  const session = verifyToken(token || '');
 
   if (!session || !session.businessId) {
-    return NextResponse.json({ message: 'Token inválido ou expirado.' }, { status: 401 });
+    return NextResponse.json({ message: 'Não autorizado.' }, { status: 401 });
   }
 
   try {
     const clients = await prisma.client.findMany({
       where: {
-        businessId: session.businessId, // <-- LÓGICA ATUALIZADA
+        businessId: session.businessId,
       },
       orderBy: {
         name: 'asc',

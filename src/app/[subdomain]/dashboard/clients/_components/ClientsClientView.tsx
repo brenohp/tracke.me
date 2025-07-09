@@ -1,10 +1,14 @@
 // Caminho: src/app/[subdomain]/dashboard/clientes/_components/ClientsClientView.tsx
 "use client";
 
-// No futuro, importaremos o useState e outros hooks aqui
+import { useState } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
+import { toast } from 'react-hot-toast';
 import { FilePenLine, Trash2 } from 'lucide-react';
+import ClientForm from './ClientForm'; 
+import ServiceModal from '../../services/_components/ServiceModal'; 
 
-// Tipo para um cliente já serializado (com datas convertidas para string)
+// Tipos
 interface SerializableClient {
   id: string;
   name: string;
@@ -21,6 +25,45 @@ interface ClientsClientViewProps {
 }
 
 export default function ClientsClientView({ clients }: ClientsClientViewProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+
+  // Estados para os modais
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [clientToDelete, setClientToDelete] = useState<SerializableClient | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  // 1. Novo estado para controlar o modal de edição
+  const [clientToEdit, setClientToEdit] = useState<SerializableClient | null>(null);
+
+  const handleDeleteClient = async () => {
+    if (!clientToDelete) return;
+
+    setIsDeleting(true);
+    try {
+      const response = await fetch(`/api/clients/${clientToDelete.id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Falha ao excluir o cliente.');
+      }
+
+      toast.success('Cliente excluído com sucesso!');
+      setClientToDelete(null);
+      router.push(pathname);
+
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        toast.error(error.message);
+      } else {
+        toast.error('Ocorreu um erro inesperado.');
+      }
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
     <div>
       <div className="flex justify-between items-center mb-8">
@@ -29,6 +72,7 @@ export default function ClientsClientView({ clients }: ClientsClientViewProps) {
         </h1>
         <button 
           className="px-4 py-2 font-semibold text-white bg-brand-accent rounded-lg hover:bg-opacity-90"
+          onClick={() => setIsCreateModalOpen(true)}
         >
           + Adicionar Cliente
         </button>
@@ -58,10 +102,21 @@ export default function ClientsClientView({ clients }: ClientsClientViewProps) {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="flex items-center justify-center gap-4">
-                        <button aria-label="Editar cliente" title="Editar cliente" className="text-brand-accent hover:text-brand-accent-light">
+                        {/* 2. Botão de editar agora é funcional */}
+                        <button 
+                          aria-label="Editar cliente" 
+                          title="Editar cliente" 
+                          className="text-brand-accent hover:text-brand-accent-light"
+                          onClick={() => setClientToEdit(client)}
+                        >
                           <FilePenLine className="h-5 w-5" />
                         </button>
-                        <button aria-label="Excluir cliente" title="Excluir cliente" className="text-red-500 hover:text-red-700">
+                        <button 
+                          aria-label="Excluir cliente" 
+                          title="Excluir cliente" 
+                          className="text-red-500 hover:text-red-700"
+                          onClick={() => setClientToDelete(client)}
+                        >
                           <Trash2 className="h-5 w-5" />
                         </button>
                       </div>
@@ -79,6 +134,38 @@ export default function ClientsClientView({ clients }: ClientsClientViewProps) {
           </table>
         </div>
       </div>
+
+      {/* Modal para CRIAR cliente */}
+      <ServiceModal title="Adicionar Novo Cliente" isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)}>
+        <ClientForm onSuccess={() => setIsCreateModalOpen(false)} />
+      </ServiceModal>
+      
+      {/* 3. Novo Modal para EDITAR cliente */}
+      <ServiceModal title="Editar Cliente" isOpen={!!clientToEdit} onClose={() => setClientToEdit(null)}>
+        <ClientForm 
+          initialData={clientToEdit} // Passa os dados para o formulário
+          onSuccess={() => setClientToEdit(null)} // Fecha o modal no sucesso
+        />
+      </ServiceModal>
+
+      {/* Modal para CONFIRMAR a exclusão */}
+      <ServiceModal title="Confirmar Exclusão" isOpen={!!clientToDelete} onClose={() => setClientToDelete(null)}>
+        <div>
+          <p className="text-gray-700">
+            Tem a certeza que deseja excluir o cliente permanentemente?
+            <br />
+            <strong className="font-semibold text-brand-primary">{clientToDelete?.name}</strong>
+          </p>
+          <div className="flex justify-end gap-4 mt-6">
+            <button type="button" className="px-4 py-2 font-semibold text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200" onClick={() => setClientToDelete(null)} disabled={isDeleting}>
+              Cancelar
+            </button>
+            <button type="button" className="px-4 py-2 font-semibold text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:bg-gray-400" onClick={handleDeleteClient} disabled={isDeleting}>
+              {isDeleting ? 'A excluir...' : 'Sim, excluir'}
+            </button>
+          </div>
+        </div>
+      </ServiceModal>
     </div>
   );
 }

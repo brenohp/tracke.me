@@ -1,30 +1,30 @@
-// src/app/api/clients/[id]/route.ts
+// Caminho: src/app/api/clients/[id]/route.ts
 import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers'; // Importa o helper de cookies
 import prisma from '@/lib/prisma';
 import { verifyToken } from '@/lib/session';
+import { revalidatePath } from 'next/cache';
 
 interface RouteContext {
   params: { id: string };
 }
 
-// Função para ATUALIZAR um cliente
+// Função para ATUALIZAR um cliente (CORRIGIDA)
 export async function PUT(request: Request, { params }: RouteContext) {
   const clientId = params.id;
-  const authHeader = request.headers.get('authorization');
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return NextResponse.json({ message: 'Não autorizado.' }, { status: 401 });
-  }
-  const token = authHeader.split(' ')[1];
-  const session = verifyToken(token);
+  
+  // Lógica de autenticação corrigida para ler o cookie
+  const cookieStore = await cookies();
+  const token = cookieStore.get('token')?.value;
+  const session = verifyToken(token || '');
 
   if (!session || !session.businessId) {
-    return NextResponse.json({ message: 'Token inválido ou expirado.' }, { status: 401 });
+    return NextResponse.json({ message: 'Não autorizado.' }, { status: 401 });
   }
 
   try {
-    // Agora verificamos se o cliente pertence ao NEGÓCIO do usuário
     const client = await prisma.client.findFirst({
-      where: { id: clientId, businessId: session.businessId }, // <-- LÓGICA ATUALIZADA
+      where: { id: clientId, businessId: session.businessId },
     });
 
     if (!client) {
@@ -32,14 +32,19 @@ export async function PUT(request: Request, { params }: RouteContext) {
     }
 
     const body = await request.json();
+    const { name, phone, email, observations } = body; // Adicionado 'observations'
+
     const updatedClient = await prisma.client.update({
       where: { id: clientId },
       data: {
-        name: body.name,
-        phone: body.phone,
-        email: body.email,
+        name,
+        phone,
+        email,
+        observations,
       },
     });
+    
+    revalidatePath('/dashboard/clientes');
 
     return NextResponse.json(updatedClient, { status: 200 });
   } catch (error) {
@@ -48,23 +53,22 @@ export async function PUT(request: Request, { params }: RouteContext) {
   }
 }
 
-// Função para DELETAR um cliente
-export async function DELETE(request: Request, { params }: RouteContext) {
+// Função para DELETAR um cliente (CORRIGIDA)
+export async function DELETE(_request: Request, { params }: RouteContext) {
   const clientId = params.id;
-  const authHeader = request.headers.get('authorization');
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return NextResponse.json({ message: 'Não autorizado.' }, { status: 401 });
-  }
-  const token = authHeader.split(' ')[1];
-  const session = verifyToken(token);
+
+  // Lógica de autenticação corrigida para ler o cookie
+  const cookieStore = await cookies();
+  const token = cookieStore.get('token')?.value;
+  const session = verifyToken(token || '');
 
   if (!session || !session.businessId) {
-    return NextResponse.json({ message: 'Token inválido ou expirado.' }, { status: 401 });
+    return NextResponse.json({ message: 'Não autorizado.' }, { status: 401 });
   }
 
   try {
     const client = await prisma.client.findFirst({
-      where: { id: clientId, businessId: session.businessId }, // <-- LÓGICA ATUALIZADA
+      where: { id: clientId, businessId: session.businessId },
     });
 
     if (!client) {
@@ -72,8 +76,10 @@ export async function DELETE(request: Request, { params }: RouteContext) {
     }
 
     await prisma.client.delete({ where: { id: clientId } });
+    
+    revalidatePath('/dashboard/clientes');
 
-    return new NextResponse(null, { status: 204 });
+    return NextResponse.json({ message: 'Cliente excluído com sucesso.' }, { status: 200 });
   } catch (error) {
     console.error(`Erro ao deletar cliente ${clientId}:`, error);
     return NextResponse.json({ message: 'Ocorreu um erro no servidor.' }, { status: 500 });
