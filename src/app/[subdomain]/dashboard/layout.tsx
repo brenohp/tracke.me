@@ -1,6 +1,6 @@
 // Caminho: src/app/[subdomain]/dashboard/layout.tsx
 
-import { DashboardShell } from './services/_components/DashboardShell';
+import { DashboardShell } from './_components/DashboardShell';
 
 export default function DashboardLayout({
   children,
