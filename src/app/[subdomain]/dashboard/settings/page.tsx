@@ -147,7 +147,7 @@ export default async function SettingsPage() {
                 </span>
               </div>
               <div className="mt-4">
-                <h3 className="text-lg font-bold text-brand-primary">Faturamento</h3>
+                <h3 className="text-lg font-bold text-brand-primary">Assinatura</h3>
                 <p className="text-sm text-gray-600 mt-1">
                   Gerencie sua assinatura e pagamentos.
                 </p>

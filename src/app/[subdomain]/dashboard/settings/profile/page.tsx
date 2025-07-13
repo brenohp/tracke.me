@@ -4,19 +4,19 @@
 import { useState, useEffect, type FormEvent } from 'react';
 import { toast } from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { ArrowLeft } from 'lucide-react';
 
 export default function ProfileSettingsPage() {
   const router = useRouter();
 
-  // Estados do formulário
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(true); // Começa como true para o fetch inicial
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Busca os dados do usuário ao carregar a página
   useEffect(() => {
     async function fetchProfile() {
       try {
@@ -28,7 +28,8 @@ export default function ProfileSettingsPage() {
         } else {
           toast.error('Não foi possível carregar os dados do seu perfil.');
         }
-      } catch {
+      } catch (error) {
+        console.error('Erro de conexão ao buscar o perfil:', error);
         toast.error('Erro de conexão ao buscar o perfil.');
       } finally {
         setIsLoading(false);
@@ -65,12 +66,10 @@ export default function ProfileSettingsPage() {
       }
       
       toast.success('Perfil atualizado com sucesso!');
-      // Limpa os campos de senha após o sucesso
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
       
-      // Força a atualização dos dados do layout
       router.refresh();
 
     } catch (error: unknown) {
@@ -84,13 +83,22 @@ export default function ProfileSettingsPage() {
     }
   };
 
+
   return (
     <div className="p-4 md:p-8">
+      {/* ====================================================== */}
+      {/* ESTE É O BLOCO DO CABEÇALHO COM O BOTÃO DE VOLTAR      */}
+      {/* ====================================================== */}
       <header className="mb-8">
-        <h1 className="text-3xl font-bold text-brand-primary">
-          Editar Perfil
-        </h1>
-        <p className="text-brand-accent mt-1">
+        <div className="flex items-center gap-4">
+          <Link href="/dashboard/settings" className="p-2 rounded-full text-brand-accent hover:bg-gray-100 transition-colors">
+            <ArrowLeft size={24} />
+          </Link>
+          <h1 className="text-3xl font-bold text-brand-primary">
+            Editar Perfil
+          </h1>
+        </div>
+        <p className="text-brand-accent mt-1 pl-14">
           Atualize seu nome e senha.
         </p>
       </header>
