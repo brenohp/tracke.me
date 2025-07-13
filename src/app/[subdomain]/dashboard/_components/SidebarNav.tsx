@@ -3,7 +3,6 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-// 1. Importa o tipo 'LucideIcon' para a nossa interface
 import { 
   type LucideIcon,
   LayoutDashboard, 
@@ -11,14 +10,15 @@ import {
   Box, 
   Settings, 
   CircleDollarSign,
-  Boxes 
+  Boxes,
+  CalendarDays
 } from 'lucide-react';
 
 interface SidebarNavProps {
   isSidebarOpen: boolean;
 }
 
-// 2. Define o tipo para um item de link individual
+// Tipos para os links
 interface NavLinkItem {
   href: string;
   label: string;
@@ -26,15 +26,16 @@ interface NavLinkItem {
   soon?: boolean;
 }
 
-// 3. Define as propriedades para o nosso componente de link
 interface NavLinkProps {
   link: NavLinkItem;
   isSidebarOpen: boolean;
   pathname: string;
 }
 
+// Lista para os links principais de navegação
 const mainNavLinks: NavLinkItem[] = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/dashboard/schedule', label: 'Agenda', icon: CalendarDays },
   { href: '/dashboard/services', label: 'Serviços', icon: Box },
   { href: '/dashboard/clients', label: 'Clientes', icon: Users },
   { href: '/dashboard/team', label: 'Equipe', icon: Users },
@@ -42,12 +43,13 @@ const mainNavLinks: NavLinkItem[] = [
   { href: '#', label: 'Estoque', icon: Boxes, soon: true },
 ];
 
+// Lista separada para os links do rodapé
 const footerNavLinks: NavLinkItem[] = [
     { href: '/dashboard/settings', label: 'Configurações', icon: Settings },
 ];
 
-// Componente de Link reutilizável
-function NavLink({ link, isSidebarOpen, pathname }: NavLinkProps) { // 4. Aplica o tipo correto
+// Componente de Link reutilizável com a tipagem correta
+function NavLink({ link, isSidebarOpen, pathname }: NavLinkProps) { // <-- CORREÇÃO AQUI
   const isActive = pathname === link.href;
   return (
     <Link

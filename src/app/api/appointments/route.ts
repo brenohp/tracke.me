@@ -1,105 +1,62 @@
-// src/app/api/appointments/route.ts
+// Caminho: src/app/api/appointments/route.ts
+
 import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
 import prisma from '@/lib/prisma';
 import { verifyToken } from '@/lib/session';
+import { revalidatePath } from 'next/cache';
 import { addMinutes, parseISO } from 'date-fns';
 
+// Função para CRIAR um novo agendamento
 export async function POST(request: Request) {
-  // Bloco de Autenticação CORRIGIDO
-  const authHeader = request.headers.get('authorization');
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return NextResponse.json({ message: 'Token de autorização ausente ou malformatado.' }, { status: 401 });
-  }
-  const token = authHeader.split(' ')[1];
-  const session = verifyToken(token);
+  const cookieStore = await cookies();
+  const token = cookieStore.get('token')?.value;
+  const session = verifyToken(token || '');
 
   if (!session || !session.businessId) {
-    return NextResponse.json({ message: 'Não autorizado ou token inválido.' }, { status: 401 });
+    return NextResponse.json({ message: 'Não autorizado.' }, { status: 401 });
   }
 
   try {
     const body = await request.json();
-    const { clientId, serviceId, startTime } = body;
+    const { serviceId, clientId, professionalId, startTime } = body;
 
-    if (!clientId || !serviceId || !startTime) {
-      return NextResponse.json({ message: 'Cliente, serviço e horário de início são obrigatórios.' }, { status: 400 });
-    }
-    
-    const service = await prisma.service.findFirst({
-      where: { id: serviceId, businessId: session.businessId }
-    });
-    const client = await prisma.client.findFirst({
-      where: { id: clientId, businessId: session.businessId }
-    });
-
-    if (!service || !client) {
-      return NextResponse.json({ message: 'Serviço ou Cliente não encontrado ou não pertence a este negócio.' }, { status: 404 });
+    if (!serviceId || !clientId || !professionalId || !startTime) {
+      return NextResponse.json({ message: 'Todos os campos são obrigatórios.' }, { status: 400 });
     }
 
-    const appointmentStartTime = parseISO(startTime);
-    const appointmentEndTime = addMinutes(appointmentStartTime, service.duration);
-
-    const conflictingAppointment = await prisma.appointment.findFirst({
-      where: {
-        professionalId: session.userId,
-        status: { not: 'CANCELED' },
-        startTime: { lt: appointmentEndTime },
-        endTime: { gt: appointmentStartTime },
-      },
+    const service = await prisma.service.findUnique({
+      where: { id: serviceId },
     });
 
-    if (conflictingAppointment) {
-      return NextResponse.json({ message: 'Conflito de horário. Já existe um agendamento neste período.' }, { status: 409 });
+    if (!service) {
+      return NextResponse.json({ message: 'Serviço não encontrado.' }, { status: 404 });
     }
+
+    const startTimeDate = parseISO(startTime);
+    const endTimeDate = addMinutes(startTimeDate, service.durationInMinutes);
 
     const newAppointment = await prisma.appointment.create({
       data: {
-        startTime: appointmentStartTime,
-        endTime: appointmentEndTime,
+        startTime: startTimeDate,
+        endTime: endTimeDate,
+        status: 'SCHEDULED',
         clientId,
         serviceId,
-        professionalId: session.userId,
-        status: 'SCHEDULED',
+        professionalId,
       },
     });
+
+    // CORREÇÃO: Aponta para o novo caminho em inglês
+    revalidatePath('/dashboard/schedule');
 
     return NextResponse.json(newAppointment, { status: 201 });
+
   } catch (error) {
     console.error('Erro ao criar agendamento:', error);
-    return NextResponse.json({ message: 'Ocorreu um erro no servidor.' }, { status: 500 });
-  }
-}
-
-export async function GET(request: Request) {
-  // Bloco de Autenticação CORRIGIDO
-  const authHeader = request.headers.get('authorization');
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return NextResponse.json({ message: 'Não autorizado.' }, { status: 401 });
-  }
-  const token = authHeader.split(' ')[1];
-  const session = verifyToken(token);
-
-  if (!session) {
-    return NextResponse.json({ message: 'Token inválido ou expirado.' }, { status: 401 });
-  }
-
-  try {
-    const appointments = await prisma.appointment.findMany({
-      where: {
-        professionalId: session.userId,
-      },
-      include: {
-        client: true,
-        service: true,
-      },
-      orderBy: {
-        startTime: 'asc',
-      },
-    });
-
-    return NextResponse.json(appointments, { status: 200 });
-  } catch (error) {
-    console.error('Erro ao listar agendamentos:', error);
-    return NextResponse.json({ message: 'Ocorreu um erro no servidor.' }, { status: 500 });
+    return NextResponse.json(
+      { message: 'Ocorreu um erro no servidor ao criar o agendamento.' },
+      { status: 500 }
+    );
   }
 }
