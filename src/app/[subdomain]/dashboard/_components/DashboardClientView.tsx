@@ -2,16 +2,22 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { BarChart, CheckCircle, XCircle } from 'lucide-react';
+import { BarChart, CheckCircle, XCircle, CalendarCheck, TrendingUp } from 'lucide-react';
 
-// Tipo para os dados de estatísticas que vêm da API
+// 1. Tipos atualizados para receber os novos dados
+interface PopularService {
+  serviceName: string;
+  count: number;
+}
+
 interface DashboardStats {
   totalAppointments: number;
   completedAppointments: number;
   canceledAppointments: number;
+  confirmedAppointments: number;
+  popularServices: PopularService[];
 }
 
-// Tipo para os períodos de filtro
 type Period = 'day' | 'week' | 'month';
 
 export default function DashboardClientView() {
@@ -31,33 +37,18 @@ export default function DashboardClientView() {
         setStats(data);
       } catch (error) {
         console.error(error);
-        // No futuro, podemos adicionar um toast de erro aqui
       } finally {
         setIsLoading(false);
       }
     }
     fetchStats();
-  }, [selectedPeriod]); // Roda o useEffect sempre que o período selecionado mudar
+  }, [selectedPeriod]);
 
   const statCards = [
-    {
-      title: 'Agendamentos',
-      value: stats?.totalAppointments,
-      icon: BarChart,
-      color: 'blue'
-    },
-    {
-      title: 'Finalizados',
-      value: stats?.completedAppointments,
-      icon: CheckCircle,
-      color: 'green'
-    },
-    {
-      title: 'Cancelados',
-      value: stats?.canceledAppointments,
-      icon: XCircle,
-      color: 'red'
-    },
+    { title: 'Agendamentos', value: stats?.totalAppointments, icon: BarChart, color: 'blue' },
+    { title: 'Confirmados', value: stats?.confirmedAppointments, icon: CalendarCheck, color: 'yellow' },
+    { title: 'Finalizados', value: stats?.completedAppointments, icon: CheckCircle, color: 'green' },
+    { title: 'Cancelados', value: stats?.canceledAppointments, icon: XCircle, color: 'red' },
   ];
 
   return (
@@ -82,7 +73,7 @@ export default function DashboardClientView() {
       </div>
 
       {/* Cartões de Estatísticas */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {statCards.map(card => (
           <div key={card.title} className="p-6 bg-white rounded-lg shadow">
             <div className="flex items-center">
@@ -92,12 +83,36 @@ export default function DashboardClientView() {
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-500">{card.title}</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {isLoading ? '...' : card.value}
+                  {isLoading ? '...' : card.value ?? 0}
                 </p>
               </div>
             </div>
           </div>
         ))}
+      </div>
+
+      {/* 2. NOVA SEÇÃO: Serviços Mais Populares */}
+      <div className="mt-8 bg-white rounded-lg shadow">
+        <div className="p-6 flex items-center gap-3">
+            <TrendingUp className="h-6 w-6 text-brand-accent"/>
+            <h2 className="text-2xl font-bold text-brand-primary">Serviços Populares</h2>
+        </div>
+        <div className="px-6 pb-6">
+          {isLoading ? (
+            <p className="text-gray-500">A carregar...</p>
+          ) : stats && stats.popularServices.length > 0 ? (
+            <ul className="space-y-4">
+              {stats.popularServices.map((service, index) => (
+                <li key={index} className="flex justify-between items-center">
+                  <span className="text-md font-medium text-gray-700">{service.serviceName}</span>
+                  <span className="text-lg font-bold text-brand-primary">{service.count}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-gray-500">Não há dados de serviços para este período.</p>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -11,14 +11,14 @@ import {
   Settings, 
   CircleDollarSign,
   Boxes,
-  CalendarDays
+  CalendarDays,
+  Package // 1. Ícone para Pacotes
 } from 'lucide-react';
 
 interface SidebarNavProps {
   isSidebarOpen: boolean;
 }
 
-// Tipos para os links
 interface NavLinkItem {
   href: string;
   label: string;
@@ -33,23 +33,27 @@ interface NavLinkProps {
 }
 
 // Lista para os links principais de navegação
-const mainNavLinks: NavLinkItem[] = [
+const managementLinks: NavLinkItem[] = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/dashboard/schedule', label: 'Agenda', icon: CalendarDays },
   { href: '/dashboard/services', label: 'Serviços', icon: Box },
   { href: '/dashboard/clients', label: 'Clientes', icon: Users },
   { href: '/dashboard/team', label: 'Equipe', icon: Users },
+];
+
+// 2. Novo link para Pacotes adicionado
+const resourcesLinks: NavLinkItem[] = [
+  { href: '#', label: 'Pacotes', icon: Package, soon: true },
   { href: '#', label: 'Faturamento', icon: CircleDollarSign, soon: true },
   { href: '#', label: 'Estoque', icon: Boxes, soon: true },
 ];
 
-// Lista separada para os links do rodapé
 const footerNavLinks: NavLinkItem[] = [
     { href: '/dashboard/settings', label: 'Configurações', icon: Settings },
 ];
 
-// Componente de Link reutilizável com a tipagem correta
-function NavLink({ link, isSidebarOpen, pathname }: NavLinkProps) { // <-- CORREÇÃO AQUI
+// Componente de Link reutilizável
+function NavLink({ link, isSidebarOpen, pathname }: NavLinkProps) {
   const isActive = pathname === link.href;
   return (
     <Link
@@ -82,13 +86,30 @@ export function SidebarNav({ isSidebarOpen }: SidebarNavProps) {
 
   return (
     <nav className="flex flex-col flex-1 p-2">
-      <div className="space-y-1">
-        {mainNavLinks.map((link) => (
-          <NavLink key={link.label} link={link} isSidebarOpen={isSidebarOpen} pathname={pathname} />
-        ))}
+      <div>
+        <h3 className={`px-4 pt-2 pb-1 text-xs font-semibold text-gray-400 uppercase tracking-wider ${!isSidebarOpen && 'hidden'}`}>
+          Gestão
+        </h3>
+        <div className="space-y-1">
+          {managementLinks.map((link) => (
+            <NavLink key={link.label} link={link} isSidebarOpen={isSidebarOpen} pathname={pathname} />
+          ))}
+        </div>
+      </div>
+      
+      <div className="mt-4">
+        <h3 className={`px-4 pt-2 pb-1 text-xs font-semibold text-gray-400 uppercase tracking-wider ${!isSidebarOpen && 'hidden'}`}>
+          Recursos
+        </h3>
+        <div className="space-y-1">
+          {resourcesLinks.map((link) => (
+            <NavLink key={link.label} link={link} isSidebarOpen={isSidebarOpen} pathname={pathname} />
+          ))}
+        </div>
       </div>
       
       <div className="mt-auto space-y-1">
+        <hr className={`border-white/10 my-2 ${!isSidebarOpen && 'mx-2'}`}/>
         {footerNavLinks.map((link) => (
             <NavLink key={link.label} link={link} isSidebarOpen={isSidebarOpen} pathname={pathname} />
         ))}

@@ -11,7 +11,7 @@ import {
   endOfWeek, 
   startOfMonth, 
   endOfMonth
-} from 'date-fns'; // CORREÇÃO: 'sub' foi removido
+} from 'date-fns';
 
 export async function GET(request: NextRequest) {
   const cookieStore = await cookies();
@@ -46,33 +46,62 @@ export async function GET(request: NextRequest) {
         break;
     }
 
-    const [totalAppointments, completedAppointments, canceledAppointments] = await Promise.all([
-      prisma.appointment.count({
-        where: {
-          service: { businessId: session.businessId },
-          startTime: { gte: startDate, lt: endDate },
-        },
-      }),
-      prisma.appointment.count({
-        where: {
-          service: { businessId: session.businessId },
-          status: 'COMPLETED',
-          startTime: { gte: startDate, lt: endDate },
-        },
-      }),
-      prisma.appointment.count({
-        where: {
-          service: { businessId: session.businessId },
-          status: 'CANCELED',
-          startTime: { gte: startDate, lt: endDate },
-        },
-      }),
+    const whereClause = {
+      service: { businessId: session.businessId },
+      startTime: { gte: startDate, lt: endDate },
+    };
+
+    // 1. As contagens de status agora usam a 'whereClause' reutilizável
+    const [totalAppointments, completedAppointments, canceledAppointments, confirmedAppointments] = await Promise.all([
+      prisma.appointment.count({ where: whereClause }),
+      prisma.appointment.count({ where: { ...whereClause, status: 'COMPLETED' } }),
+      prisma.appointment.count({ where: { ...whereClause, status: 'CANCELED' } }),
+      prisma.appointment.count({ where: { ...whereClause, status: 'CONFIRMED' } }),
     ]);
+
+    // 2. Nova lógica para encontrar os serviços mais populares
+    const popularServicesData = await prisma.appointment.groupBy({
+      by: ['serviceId'],
+      where: whereClause,
+      _count: {
+        serviceId: true,
+      },
+      orderBy: {
+        _count: {
+          serviceId: 'desc',
+        },
+      },
+      take: 3, // Pega os 3 serviços do topo
+    });
+
+    // 3. Busca os nomes dos serviços com base nos IDs encontrados
+    const serviceIds = popularServicesData.map(item => item.serviceId);
+    const services = await prisma.service.findMany({
+      where: {
+        id: { in: serviceIds },
+      },
+      select: {
+        id: true,
+        name: true,
+      },
+    });
+
+    // Mapeia o nome para cada resultado do groupBy
+    const popularServices = popularServicesData.map(item => {
+      const service = services.find(s => s.id === item.serviceId);
+      return {
+        serviceName: service?.name || 'Serviço desconhecido',
+        count: item._count.serviceId,
+      };
+    });
+
 
     const stats = {
       totalAppointments,
       completedAppointments,
       canceledAppointments,
+      confirmedAppointments,
+      popularServices, // 4. Adiciona a nova informação à resposta
     };
 
     return NextResponse.json(stats, { status: 200 });
