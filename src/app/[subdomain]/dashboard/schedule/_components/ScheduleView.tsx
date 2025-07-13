@@ -3,25 +3,25 @@
 
 import { useState } from 'react';
 import ServiceModal from '../../services/_components/ServiceModal';
-import AppointmentForm from './AppointmentForm'; // 1. Importa o nosso novo formulário
+import AppointmentForm from './AppointmentForm';
+import CalendarView from './CalendarView';
+// CORREÇÃO: Importa o DateClickArg do plugin de interação
+import { type DateClickArg } from '@fullcalendar/interaction';
 
-// Definindo os tipos para os dados que recebemos da página de servidor
+// Tipos
 interface Professional {
   id: string;
   name: string;
 }
-
 interface SerializableService {
   id: string;
   name: string;
   durationInMinutes: number;
 }
-
 interface SerializableClient {
   id: string;
   name: string;
 }
-
 interface ScheduleViewProps {
   services: SerializableService[];
   clients: SerializableClient[];
@@ -29,8 +29,14 @@ interface ScheduleViewProps {
 }
 
 export default function ScheduleView({ services, clients, professionals }: ScheduleViewProps) {
-  // Estado para controlar o modal de criação de agendamento
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<string | undefined>(undefined);
+
+  const handleDateClick = (arg: DateClickArg) => {
+    const formattedDate = arg.dateStr.substring(0, 16);
+    setSelectedDate(formattedDate);
+    setIsModalOpen(true);
+  };
 
   return (
     <div className="p-4 md:p-8">
@@ -40,28 +46,27 @@ export default function ScheduleView({ services, clients, professionals }: Sched
         </h1>
         <button 
           className="px-4 py-2 font-semibold text-white bg-brand-accent rounded-lg hover:bg-opacity-90"
-          onClick={() => setIsModalOpen(true)}
+          onClick={() => {
+            setSelectedDate(undefined);
+            setIsModalOpen(true);
+          }}
         >
           + Novo Agendamento
         </button>
       </div>
 
-      {/* Placeholder para o Calendário */}
-      <div className="bg-white rounded-lg shadow p-6 min-h-[60vh] flex items-center justify-center">
-        <p className="text-gray-400">O calendário de agendamentos aparecerá aqui.</p>
-      </div>
+      <CalendarView onDateClick={handleDateClick} />
 
-      {/* Modal para criar um novo agendamento */}
       <ServiceModal
         title="Novo Agendamento"
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
       >
-        {/* 2. Renderiza o formulário e passa os dados necessários */}
         <AppointmentForm 
           services={services}
           clients={clients}
           professionals={professionals}
+          initialStartTime={selectedDate}
           onSuccess={() => setIsModalOpen(false)}
         />
       </ServiceModal>

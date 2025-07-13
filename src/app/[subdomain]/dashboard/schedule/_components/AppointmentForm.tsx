@@ -1,7 +1,7 @@
 // Caminho: src/app/[subdomain]/dashboard/schedule/_components/AppointmentForm.tsx
 "use client";
 
-import { useState, type FormEvent } from 'react';
+import { useState, useEffect, type FormEvent } from 'react';
 import { toast } from 'react-hot-toast';
 import { useRouter, usePathname } from 'next/navigation';
 
@@ -15,10 +15,11 @@ interface AppointmentFormProps {
   services: SelectOption[];
   clients: SelectOption[];
   professionals: SelectOption[];
+  initialStartTime?: string; // Prop para a data inicial
   onSuccess?: () => void;
 }
 
-export default function AppointmentForm({ services, clients, professionals, onSuccess }: AppointmentFormProps) {
+export default function AppointmentForm({ services, clients, professionals, initialStartTime, onSuccess }: AppointmentFormProps) {
   const router = useRouter();
   const pathname = usePathname();
   
@@ -26,8 +27,15 @@ export default function AppointmentForm({ services, clients, professionals, onSu
   const [clientId, setClientId] = useState('');
   const [serviceId, setServiceId] = useState('');
   const [professionalId, setProfessionalId] = useState('');
-  const [startTime, setStartTime] = useState('');
+  const [startTime, setStartTime] = useState(initialStartTime || '');
   const [isLoading, setIsLoading] = useState(false);
+
+  // useEffect para atualizar a data se o usuário clicar noutra data
+  useEffect(() => {
+    if (initialStartTime) {
+      setStartTime(initialStartTime);
+    }
+  }, [initialStartTime]);
 
   const resetForm = () => {
     setClientId('');
