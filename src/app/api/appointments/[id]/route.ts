@@ -1,16 +1,18 @@
-// Caminho: src/app/api/team/[id]/route.ts
+// Caminho: src/app/api/appointments/[id]/route.ts
 
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import prisma from '@/lib/prisma';
 import { verifyToken } from '@/lib/session';
 import { revalidatePath } from 'next/cache';
+import { addMinutes, parseISO } from 'date-fns';
 
-// Função para ATUALIZAR (EDITAR) um membro
+// Função para ATUALIZAR (EDITAR) um agendamento
 export async function PUT(
   request: Request,
   { params }: { params: { id: string } }
 ) {
+  const appointmentId = params.id;
   const cookieStore = await cookies();
   const token = cookieStore.get('token')?.value;
   const session = verifyToken(token || '');
@@ -19,73 +21,62 @@ export async function PUT(
     return NextResponse.json({ message: 'Não autorizado.' }, { status: 401 });
   }
 
-  if (session.role !== 'OWNER') {
-    return NextResponse.json(
-      { message: 'Acesso negado. Apenas o proprietário pode editar membros.' },
-      { status: 403 }
-    );
-  }
-
-  const memberIdToEdit = params.id;
-
   try {
     const body = await request.json();
-    const { name, role } = body;
+    const { serviceId, clientId, professionalId, startTime, status } = body;
 
-    if (!name || !role) {
-      return NextResponse.json({ message: 'Nome e cargo são obrigatórios.' }, { status: 400 });
+    if (!serviceId || !clientId || !professionalId || !startTime || !status) {
+      return NextResponse.json({ message: 'Todos os campos são obrigatórios.' }, { status: 400 });
     }
-    
-    const memberToEdit = await prisma.user.findFirst({
-      where: { id: memberIdToEdit, businessId: session.businessId },
+
+    // Garante que o agendamento a ser editado pertence ao negócio do usuário
+    const appointmentToUpdate = await prisma.appointment.findFirst({
+      where: {
+        id: appointmentId,
+        service: { businessId: session.businessId }
+      }
     });
 
-    if (!memberToEdit) {
-      return NextResponse.json(
-        { message: 'Membro não encontrado ou não pertence à sua equipe.' },
-        { status: 404 }
-      );
+    if (!appointmentToUpdate) {
+      return NextResponse.json({ message: 'Agendamento não encontrado ou acesso negado.' }, { status: 404 });
     }
     
-    if (memberToEdit.id === session.userId && role !== 'OWNER') {
-      return NextResponse.json({ message: 'O proprietário não pode alterar o seu próprio cargo.' }, { status: 400 });
+    // Recalcula o horário final caso o serviço (e sua duração) tenha mudado
+    const service = await prisma.service.findUnique({ where: { id: serviceId } });
+    if (!service) {
+      return NextResponse.json({ message: 'Serviço selecionado não é válido.' }, { status: 400 });
     }
+    const startTimeDate = parseISO(startTime);
+    const endTimeDate = addMinutes(startTimeDate, service.durationInMinutes);
 
-    const updatedMember = await prisma.user.update({
-      where: { id: memberIdToEdit },
+    // Atualiza o agendamento
+    const updatedAppointment = await prisma.appointment.update({
+      where: { id: appointmentId },
       data: {
-        name,
-        role,
+        startTime: startTimeDate,
+        endTime: endTimeDate,
+        status,
+        clientId,
+        serviceId,
+        professionalId,
       },
     });
 
-    revalidatePath('/dashboard/team');
+    revalidatePath('/dashboard/schedule');
+    return NextResponse.json(updatedAppointment, { status: 200 });
 
-    const memberToReturn = {
-      id: updatedMember.id,
-      name: updatedMember.name,
-      email: updatedMember.email,
-      role: updatedMember.role,
-      businessId: updatedMember.businessId,
-      createdAt: updatedMember.createdAt,
-      updatedAt: updatedMember.updatedAt,
-    };
-    return NextResponse.json(memberToReturn, { status: 200 });
-    
   } catch (error) {
-    console.error('Erro ao atualizar membro da equipe:', error);
-    return NextResponse.json(
-      { message: 'Ocorreu um erro no servidor ao atualizar o membro.' },
-      { status: 500 }
-    );
+    console.error(`Erro ao atualizar agendamento ${appointmentId}:`, error);
+    return NextResponse.json({ message: 'Ocorreu um erro no servidor.' }, { status: 500 });
   }
 }
 
-// Função para DELETAR um membro (agora completa)
+// Função para EXCLUIR um agendamento
 export async function DELETE(
   _request: Request,
   { params }: { params: { id: string } }
 ) {
+  const appointmentId = params.id;
   const cookieStore = await cookies();
   const token = cookieStore.get('token')?.value;
   const session = verifyToken(token || '');
@@ -93,50 +84,27 @@ export async function DELETE(
   if (!session || !session.businessId) {
     return NextResponse.json({ message: 'Não autorizado.' }, { status: 401 });
   }
-
-  if (session.role !== 'OWNER') {
-    return NextResponse.json(
-      { message: 'Acesso negado. Apenas o proprietário pode remover membros.' },
-      { status: 403 }
-    );
-  }
-
-  const memberIdToDelete = params.id;
-
-  if (memberIdToDelete === session.userId) {
-    return NextResponse.json(
-        { message: 'Você não pode remover a si mesmo da equipe.' },
-        { status: 400 }
-      );
-  }
-
+  
   try {
-    const member = await prisma.user.findFirst({
+    const appointmentToDelete = await prisma.appointment.findFirst({
       where: {
-        id: memberIdToDelete,
-        businessId: session.businessId,
-      },
+        id: appointmentId,
+        service: { businessId: session.businessId }
+      }
     });
 
-    if (!member) {
-      return NextResponse.json(
-        { message: 'Membro não encontrado ou não pertence à sua equipe.' },
-        { status: 404 }
-      );
+    if (!appointmentToDelete) {
+      return NextResponse.json({ message: 'Agendamento não encontrado ou acesso negado.' }, { status: 404 });
     }
 
-    await prisma.user.delete({
-      where: { id: memberIdToDelete },
+    await prisma.appointment.delete({
+      where: { id: appointmentId },
     });
 
-    revalidatePath('/dashboard/team');
-
-    return NextResponse.json({ message: 'Membro da equipe removido com sucesso.' }, { status: 200 });
+    revalidatePath('/dashboard/schedule');
+    return NextResponse.json({ message: 'Agendamento excluído com sucesso.' }, { status: 200 });
   } catch (error) {
-    console.error('Erro ao remover membro da equipe:', error);
-    return NextResponse.json(
-      { message: 'Ocorreu um erro no servidor ao remover o membro.' },
-      { status: 500 }
-    );
+    console.error(`Erro ao excluir agendamento ${appointmentId}:`, error);
+    return NextResponse.json({ message: 'Ocorreu um erro no servidor.' }, { status: 500 });
   }
 }

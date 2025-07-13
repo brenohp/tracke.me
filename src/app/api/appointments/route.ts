@@ -3,6 +3,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { cookies } from 'next/headers';
 import prisma from '@/lib/prisma';
+import { Prisma } from '@prisma/client'; // 1. CORREÇÃO: Importa os tipos diretamente do Prisma Client
 import { verifyToken } from '@/lib/session';
 import { revalidatePath } from 'next/cache';
 import { addMinutes, parseISO } from 'date-fns';
@@ -47,7 +48,6 @@ export async function POST(request: Request) {
       },
     });
 
-    // CORREÇÃO: Aponta para o novo caminho em inglês
     revalidatePath('/dashboard/schedule');
 
     return NextResponse.json(newAppointment, { status: 201 });
@@ -61,9 +61,8 @@ export async function POST(request: Request) {
   }
 }
 
-// NOVA FUNÇÃO PARA LISTAR OS AGENDAMENTOS
+// Função GET para listar os agendamentos, com filtros
 export async function GET(request: NextRequest) {
-  // 1. Autenticação
   const cookieStore = await cookies();
   const token = cookieStore.get('token')?.value;
   const session = verifyToken(token || '');
@@ -73,55 +72,61 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // 2. Busca os parâmetros de data da URL
     const { searchParams } = request.nextUrl;
     const start = searchParams.get('start');
     const end = searchParams.get('end');
+    const search = searchParams.get('search');
 
-    if (!start || !end) {
-      return NextResponse.json(
-        { message: 'Os parâmetros de data "start" e "end" são obrigatórios.' },
-        { status: 400 }
-      );
+    const whereClause: Prisma.AppointmentWhereInput = {
+      professional: {
+        businessId: session.businessId,
+      },
+    };
+
+    if (start && end) {
+      whereClause.startTime = { gte: new Date(start) };
+      whereClause.endTime = { lte: new Date(end) };
+    }
+
+    if (search) {
+      whereClause.client = {
+        name: {
+          contains: search,
+          mode: 'insensitive',
+        },
+      };
     }
     
-    // 3. Busca os agendamentos no banco de dados para o período selecionado
     const appointments = await prisma.appointment.findMany({
-      where: {
-        // Encontra agendamentos de todos os profissionais do mesmo negócio
-        professional: {
-          businessId: session.businessId,
-        },
-        // Filtra pelo período de datas
-        startTime: {
-          gte: new Date(start), // gte = Greater Than or Equal (maior ou igual a)
-        },
-        endTime: {
-          lte: new Date(end), // lte = Less Than or Equal (menor ou igual a)
-        },
-      },
+      where: whereClause,
       include: {
-        client: { select: { name: true } }, // Inclui o nome do cliente
-        service: { select: { name: true } }, // Inclui o nome do serviço
+        client: { select: { name: true } },
+        service: { select: { name: true } },
+        professional: { select: { name: true } },
       },
+      orderBy: {
+        startTime: 'desc',
+      }
     });
 
-    // 4. Formata os dados para o formato que o FullCalendar entende
-    const calendarEvents = appointments.map(apt => ({
-      id: apt.id,
-      title: `${apt.client.name} - ${apt.service.name}`,
-      start: apt.startTime.toISOString(),
-      end: apt.endTime.toISOString(),
-      // Adicionamos dados extras que usaremos depois para cores e modais
-      extendedProps: {
-        status: apt.status,
-        clientId: apt.clientId,
-        serviceId: apt.serviceId,
-        professionalId: apt.professionalId,
-      }
-    }));
-
-    return NextResponse.json(calendarEvents, { status: 200 });
+    if (start && end) {
+      const calendarEvents = appointments.map(apt => ({
+        id: apt.id,
+        title: `${apt.client.name} - ${apt.service.name}`,
+        start: apt.startTime.toISOString(),
+        end: apt.endTime.toISOString(),
+        extendedProps: {
+          status: apt.status,
+          clientId: apt.clientId,
+          serviceId: apt.serviceId,
+          professionalId: apt.professionalId,
+        }
+      }));
+      return NextResponse.json(calendarEvents, { status: 200 });
+    } else {
+      return NextResponse.json(appointments, { status: 200 });
+    }
+    
   } catch (error) {
     console.error('Erro ao buscar agendamentos:', error);
     return NextResponse.json(
