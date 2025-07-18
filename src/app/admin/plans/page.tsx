@@ -18,7 +18,7 @@ async function getPlansData() {
 }
 
 export default async function AdminPlansPage() {
-  // Segurança em camadas
+  // Segurança em camadas: verificamos a sessão novamente aqui
   const cookieStore = await cookies();
   const token = cookieStore.get('token')?.value;
   const session = verifyToken(token || '');

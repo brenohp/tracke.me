@@ -2,11 +2,11 @@
 "use client";
 
 import { useState } from 'react';
-import { toast } from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
-import { FilePenLine, Trash2 } from 'lucide-react';
+import { FilePenLine } from 'lucide-react';
 import Modal from '@/components/ui/Modal';
 import PlanForm from './PlanForm';
+// A importação do 'toast' foi removida daqui, pois não é usada.
 
 // Tipo para um plano já serializado
 interface SerializablePlan {
@@ -28,36 +28,11 @@ export default function PlansView({ plans }: PlansViewProps) {
   // Estados para os modais
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [planToEdit, setPlanToEdit] = useState<SerializablePlan | null>(null);
-  const [planToDelete, setPlanToDelete] = useState<SerializablePlan | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleSuccess = () => {
     setIsCreateModalOpen(false);
     setPlanToEdit(null);
-    // O router.refresh() no formulário irá atualizar a lista
-  };
-
-  // Nova função para confirmar e executar a exclusão
-  const handleConfirmDelete = async () => {
-    if (!planToDelete) return;
-    setIsDeleting(true);
-    try {
-      const response = await fetch(`/api/admin/plans/${planToDelete.id}`, {
-        method: 'DELETE',
-      });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Falha ao excluir o plano.');
-      }
-      toast.success('Plano excluído com sucesso!');
-      setPlanToDelete(null); // Fecha o modal
-      router.refresh(); // Atualiza a lista
-    } catch (error) {
-      if (error instanceof Error) toast.error(error.message);
-      else toast.error('Ocorreu um erro ao excluir.');
-    } finally {
-      setIsDeleting(false);
-    }
+    router.refresh(); // O router é usado aqui para atualizar os dados
   };
 
   return (
@@ -112,9 +87,6 @@ export default function PlansView({ plans }: PlansViewProps) {
                         <button onClick={() => setPlanToEdit(plan)} className="text-brand-accent hover:text-brand-accent-light">
                           <FilePenLine className="h-5 w-5" />
                         </button>
-                        <button onClick={() => setPlanToDelete(plan)} className="text-red-500 hover:text-red-700">
-                          <Trash2 className="h-5 w-5" />
-                        </button>
                       </div>
                     </td>
                   </tr>
@@ -132,43 +104,24 @@ export default function PlansView({ plans }: PlansViewProps) {
       </div>
       
       {/* Modal para CRIAR um plano */}
-      <Modal title="Criar Novo Plano" isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)}>
+      <Modal
+        title="Criar Novo Plano"
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+      >
         <PlanForm onSuccess={handleSuccess} />
       </Modal>
       
       {/* Modal para EDITAR um plano */}
-      <Modal title="Editar Plano" isOpen={!!planToEdit} onClose={() => setPlanToEdit(null)}>
+      <Modal
+        title="Editar Plano"
+        isOpen={!!planToEdit}
+        onClose={() => setPlanToEdit(null)}
+      >
         <PlanForm 
           initialData={planToEdit}
           onSuccess={handleSuccess} 
         />
-      </Modal>
-
-      {/* Modal para CONFIRMAR a exclusão */}
-      <Modal title="Confirmar Exclusão" isOpen={!!planToDelete} onClose={() => setPlanToDelete(null)}>
-        <div>
-          <p className="text-gray-700">
-            Tem a certeza que deseja excluir o plano <strong className="font-semibold text-brand-primary">{planToDelete?.name}</strong>? Esta ação não pode ser desfeita.
-          </p>
-          <div className="flex justify-end gap-4 mt-6">
-            <button
-              type="button"
-              className="px-4 py-2 font-semibold text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
-              onClick={() => setPlanToDelete(null)}
-              disabled={isDeleting}
-            >
-              Cancelar
-            </button>
-            <button
-              type="button"
-              className="px-4 py-2 font-semibold text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:bg-gray-400"
-              onClick={handleConfirmDelete}
-              disabled={isDeleting}
-            >
-              {isDeleting ? 'A excluir...' : 'Sim, excluir'}
-            </button>
-          </div>
-        </div>
       </Modal>
     </div>
   );
