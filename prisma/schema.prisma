@@ -14,10 +14,15 @@ model Business {
   id        String @id @default(cuid())
   name      String
   phone     String?
-  plan      String @default("TRIAL")
   status    String @default("ACTIVE")
   subdomain String @unique
 
+  // --- INÍCIO DA CORREÇÃO ---
+  // A relação agora aponta para o campo 'businesses' no modelo Plan
+  planId    String?
+  plan      Plan?     @relation(fields: [planId], references: [id])
+  // --- FIM DA CORREÇÃO ---
+  
   users     User[]
   services  Service[]
   clients   Client[]
@@ -36,9 +41,7 @@ model User {
   businessId String
   business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
-  // RELAÇÃO ADICIONADA: Quais serviços este profissional pode realizar
   services       Service[]      @relation("ProfessionalsOnServices")
-
   availabilities Availability[]
   timeOffs       TimeOff[]
   appointments   Appointment[]  @relation("ProfessionalAppointments")
@@ -52,15 +55,13 @@ model Service {
   name              String
   description       String?
   price             Decimal       @db.Decimal(10, 2)
-  durationInMinutes Int // CAMPO RENOMEADO PARA MAIOR CLAREZA
-  status            ServiceStatus @default(ACTIVE) // CAMPO ADICIONADO
+  durationInMinutes Int
+  status            ServiceStatus @default(ACTIVE)
 
   businessId String
   business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
-  // RELAÇÃO ADICIONADA: Quais profissionais podem realizar este serviço
   professionals User[] @relation("ProfessionalsOnServices")
-
   appointments Appointment[]
 
   createdAt DateTime @default(now())
@@ -68,10 +69,10 @@ model Service {
 }
 
 model Client {
-  id    String  @id @default(cuid())
-  name  String
-  phone String?
-  email String?
+  id           String  @id @default(cuid())
+  name         String
+  phone        String?
+  email        String?
   observations String?
 
   businessId String
@@ -84,22 +85,22 @@ model Client {
 }
 
 model Appointment {
-  id        String            @id @default(cuid())
-  startTime DateTime
-  endTime   DateTime
-  status    AppointmentStatus @default(SCHEDULED)
+  id             String            @id @default(cuid())
+  startTime      DateTime
+  endTime        DateTime
+  status         AppointmentStatus @default(SCHEDULED)
 
-  clientId String
-  client   Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  clientId       String
+  client         Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
 
-  serviceId String
-  service   Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  serviceId      String
+  service        Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
 
   professionalId String
   professional   User @relation("ProfessionalAppointments", fields: [professionalId], references: [id], onDelete: Cascade)
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 }
 
 model Availability {
@@ -120,6 +121,21 @@ model TimeOff {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
+model Plan {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  price       Decimal  @db.Decimal(10, 2)
+  features    Json
+  active      Boolean  @default(true)
+
+  // Relação: Um plano pode ter vários negócios
+  businesses  Business[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
 enum Role {
   ADMIN
   OWNER
@@ -134,7 +150,6 @@ enum AppointmentStatus {
   NO_SHOW
 }
 
-// ENUM ADICIONADO para o status do serviço
 enum ServiceStatus {
   ACTIVE
   INACTIVE
