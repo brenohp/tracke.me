@@ -4,12 +4,14 @@
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
-// Tipo para um negócio já serializado, incluindo a contagem de usuários
+// CORREÇÃO: O tipo agora espera um objeto 'plan' (ou null)
 interface SerializableBusiness {
   id: string;
   name: string;
   phone: string | null;
-  plan: string;
+  plan: {
+    name: string;
+  } | null; // O plano pode ser nulo
   status: string;
   subdomain: string;
   createdAt: string;
@@ -65,8 +67,9 @@ export default function BusinessesView({ businesses }: BusinessesViewProps) {
                       </a>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
+                      {/* CORREÇÃO: Exibe o nome do plano ou 'N/A' */}
                       <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                        {business.plan}
+                        {business.plan?.name || 'N/A'}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">

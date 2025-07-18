@@ -4,7 +4,7 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { verifyToken } from '@/lib/session';
 import prisma from '@/lib/prisma';
-import BusinessesView from './_components/BusinessesView'; // Vamos criar este ficheiro a seguir
+import BusinessesView from './_components/BusinessesView';
 
 // Função para buscar os dados de todos os negócios no servidor
 async function getBusinessesData() {
@@ -12,8 +12,13 @@ async function getBusinessesData() {
     orderBy: {
       createdAt: 'desc',
     },
-    // Inclui a contagem de usuários para sabermos o tamanho da equipe
+    // CORREÇÃO: Incluímos os dados do plano relacionado
     include: {
+      plan: { // Busca os dados do plano associado
+        select: {
+          name: true,
+        }
+      },
       _count: {
         select: { users: true },
       },
@@ -24,7 +29,6 @@ async function getBusinessesData() {
 }
 
 export default async function AdminBusinessesPage() {
-  // Segurança em camadas: verificamos a sessão novamente aqui
   const cookieStore = await cookies();
   const token = cookieStore.get('token')?.value;
   const session = verifyToken(token || '');
@@ -42,6 +46,5 @@ export default async function AdminBusinessesPage() {
     updatedAt: business.updatedAt.toISOString(),
   }));
 
-  // A página renderiza o componente de cliente, passando os dados
   return <BusinessesView businesses={serializableBusinesses} />;
 }
