@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import prisma from '@/lib/prisma';
 import { verifyToken } from '@/lib/session';
+import { revalidatePath } from 'next/cache';
 
 // Função para LISTAR todos os planos (Apenas para ADMIN)
 export async function GET() {
@@ -18,16 +19,13 @@ export async function GET() {
   try {
     const plans = await prisma.plan.findMany({
       orderBy: {
-        price: 'asc', // Ordena do mais barato para o mais caro
+        price: 'asc',
       },
     });
     return NextResponse.json(plans, { status: 200 });
   } catch (error) {
     console.error('Erro ao listar planos (admin):', error);
-    return NextResponse.json(
-      { message: 'Ocorreu um erro no servidor.' },
-      { status: 500 }
-    );
+    return NextResponse.json({ message: 'Ocorreu um erro no servidor.' }, { status: 500 });
   }
 }
 
@@ -58,14 +56,14 @@ export async function POST(request: Request) {
         active,
       },
     });
+    
+    // Invalida o cache da página de planos para que a lista seja atualizada
+    revalidatePath('/admin/plans');
 
     return NextResponse.json(newPlan, { status: 201 });
 
   } catch (error) {
     console.error('Erro ao criar plano (admin):', error);
-    return NextResponse.json(
-      { message: 'Ocorreu um erro no servidor.' },
-      { status: 500 }
-    );
+    return NextResponse.json({ message: 'Ocorreu um erro no servidor.' }, { status: 500 });
   }
 }

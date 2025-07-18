@@ -17,11 +17,8 @@ model Business {
   status    String @default("ACTIVE")
   subdomain String @unique
 
-  // --- INÍCIO DA CORREÇÃO ---
-  // A relação agora aponta para o campo 'businesses' no modelo Plan
   planId    String?
   plan      Plan?     @relation(fields: [planId], references: [id])
-  // --- FIM DA CORREÇÃO ---
   
   users     User[]
   services  Service[]
@@ -129,11 +126,24 @@ model Plan {
   features    Json
   active      Boolean  @default(true)
 
-  // Relação: Um plano pode ter vários negócios
   businesses  Business[]
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+// ===================================
+// NOVO MODELO ADICIONADO
+// ===================================
+model Coupon {
+  id            String      @id @default(cuid())
+  code          String      @unique // O código do cupom, ex: "LANCAMENTO2025"
+  discountType  DiscountType // O tipo de desconto
+  discountValue Decimal?    // O valor (ex: 50.00) ou percentagem (ex: 10) do desconto
+  expiresAt     DateTime?   // Data de validade do cupom
+  active        Boolean     @default(true)
+
+  createdAt     DateTime @default(now())
 }
 
 enum Role {
@@ -153,4 +163,13 @@ enum AppointmentStatus {
 enum ServiceStatus {
   ACTIVE
   INACTIVE
+}
+
+// ===================================
+// NOVO ENUM ADICIONADO
+// ===================================
+enum DiscountType {
+  PERCENTAGE // Desconto em percentagem
+  FIXED      // Desconto de valor fixo
+  FREE_TRIAL // Libera um período de teste gratuito
 }
