@@ -5,21 +5,22 @@ import { useState, type FormEvent, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
 
-// Estrutura das permissões
 interface PlanPermissions {
   hasPackages: boolean;
   hasBilling: boolean;
   hasInventory: boolean;
+  hasAutomation: boolean;
+  hasMarketing: boolean;
+  hasReports: boolean;
 }
 
-// 1. Tipo para os dados iniciais atualizado
 interface PlanData {
   id?: string;
   name: string;
   description: string | null;
   price: string;
-  features: string; // Virá como string JSON
-  permissions?: string; // Virá como string JSON
+  features: string;
+  permissions?: string;
   active: boolean;
 }
 
@@ -32,6 +33,9 @@ const initialPermissions: PlanPermissions = {
   hasPackages: false,
   hasBilling: false,
   hasInventory: false,
+  hasAutomation: false,
+  hasMarketing: false,
+  hasReports: false,
 };
 
 export default function PlanForm({ onSuccess, initialData }: PlanFormProps) {
@@ -43,7 +47,6 @@ export default function PlanForm({ onSuccess, initialData }: PlanFormProps) {
   const [features, setFeatures] = useState('');
   const [active, setActive] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
-  // 2. Novo estado para as permissões
   const [permissions, setPermissions] = useState<PlanPermissions>(initialPermissions);
 
   const isEditing = !!initialData;
@@ -55,7 +58,6 @@ export default function PlanForm({ onSuccess, initialData }: PlanFormProps) {
       setPrice(initialData.price);
       setActive(initialData.active);
 
-      // Popula o campo 'features' (textual)
       try {
         const featuresArray = JSON.parse(initialData.features);
         setFeatures(featuresArray.join('\n'));
@@ -63,7 +65,6 @@ export default function PlanForm({ onSuccess, initialData }: PlanFormProps) {
         setFeatures('');
       }
       
-      // 3. Popula o estado das permissões (checkboxes)
       try {
         if (initialData.permissions) {
           const parsedPermissions = JSON.parse(initialData.permissions);
@@ -76,7 +77,6 @@ export default function PlanForm({ onSuccess, initialData }: PlanFormProps) {
       }
 
     } else {
-      // Reseta o formulário se não houver dados iniciais
       setName('');
       setDescription('');
       setPrice('');
@@ -86,7 +86,6 @@ export default function PlanForm({ onSuccess, initialData }: PlanFormProps) {
     }
   }, [initialData]);
 
-  // Função para lidar com a mudança dos checkboxes
   const handlePermissionChange = (key: keyof PlanPermissions) => {
     setPermissions(prev => ({ ...prev, [key]: !prev[key] }));
   };
@@ -98,13 +97,12 @@ export default function PlanForm({ onSuccess, initialData }: PlanFormProps) {
     const featuresArray = features.split('\n').filter(feat => feat.trim() !== '');
 
     try {
-      // 4. Inclui o objeto de permissões no payload a ser salvo
       const planData = {
         name,
         description,
         price: Number(price),
         features: featuresArray,
-        permissions, // Objeto de permissões
+        permissions,
         active,
       };
 
@@ -164,18 +162,17 @@ export default function PlanForm({ onSuccess, initialData }: PlanFormProps) {
           <textarea id="features" value={features} onChange={(e) => setFeatures(e.target.value)} rows={4} required className="mt-1 block w-full border-gray-300 rounded-md shadow-sm"></textarea>
         </div>
 
-        {/* =================================================================== */}
-        {/* 5. NOVA SEÇÃO DE CHECKBOXES PARA AS PERMISSÕES                    */}
-        {/* =================================================================== */}
         <div>
           <label className="block text-sm font-medium text-gray-700">Permissões do Plano (para o Dashboard)</label>
           <div className="mt-2 space-y-2 p-4 border border-gray-300 rounded-md">
-            {Object.keys(permissions).map((key) => {
-              const permissionKey = key as keyof PlanPermissions;
+            {(Object.keys(permissions) as Array<keyof PlanPermissions>).map((permissionKey) => {
               const labels = {
                 hasPackages: "Habilitar Módulo de Pacotes",
                 hasBilling: "Habilitar Módulo de Faturamento",
-                hasInventory: "Habilitar Módulo de Estoque"
+                hasInventory: "Habilitar Módulo de Estoque",
+                hasAutomation: "Habilitar Módulo de Automação IA",
+                hasMarketing: "Habilitar Módulo de Marketing",
+                hasReports: "Habilitar Módulo de Relatórios/Análise"
               };
 
               return (
@@ -183,6 +180,7 @@ export default function PlanForm({ onSuccess, initialData }: PlanFormProps) {
                   <input
                     type="checkbox"
                     id={permissionKey}
+                    // A CORREÇÃO FOI AQUI: Acessando a propriedade de um objeto
                     checked={permissions[permissionKey]}
                     onChange={() => handlePermissionChange(permissionKey)}
                     className="h-4 w-4 text-brand-accent border-gray-300 rounded"

@@ -12,13 +12,20 @@ import {
   CircleDollarSign,
   Boxes,
   CalendarDays,
-  Package
+  Package,
+  Sparkles,
+  Megaphone,
+  PiggyBank,
+  BarChartHorizontal
 } from 'lucide-react';
-import type { PlanPermissions } from '../layout'; // 1. Importar o tipo de permissões
+// A interface agora é importada corretamente do layout, que é a fonte da verdade.
+import type { PlanPermissions } from '../layout';
+
+// A declaração local de 'PlanPermissions' foi REMOVIDA para resolver o conflito.
 
 interface SidebarNavProps {
   isSidebarOpen: boolean;
-  permissions: PlanPermissions; // 2. Receber as permissões
+  permissions: PlanPermissions;
 }
 
 interface NavLinkItem {
@@ -26,7 +33,7 @@ interface NavLinkItem {
   label: string;
   icon: LucideIcon;
   soon?: boolean;
-  permissionKey?: keyof PlanPermissions; // 3. Chave para verificar a permissão
+  permissionKey?: keyof PlanPermissions;
 }
 
 interface NavLinkProps {
@@ -35,7 +42,6 @@ interface NavLinkProps {
   pathname: string;
 }
 
-// Links de gestão (geralmente disponíveis para todos)
 const managementLinks: NavLinkItem[] = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/dashboard/schedule', label: 'Agenda', icon: CalendarDays },
@@ -44,11 +50,20 @@ const managementLinks: NavLinkItem[] = [
   { href: '/dashboard/team', label: 'Equipe', icon: Users },
 ];
 
-// Links de recursos (agora ativados por permissão)
 const resourcesLinks: NavLinkItem[] = [
+  { href: '/dashboard/automation', label: 'Automação IA', icon: Sparkles, permissionKey: 'hasAutomation', soon: true },
   { href: '/dashboard/packages', label: 'Pacotes', icon: Package, permissionKey: 'hasPackages', soon: true },
-  { href: '/dashboard/billing', label: 'Faturamento', icon: CircleDollarSign, permissionKey: 'hasBilling', soon: true },
   { href: '/dashboard/inventory', label: 'Estoque', icon: Boxes, permissionKey: 'hasInventory', soon: true },
+];
+
+const marketingLinks: NavLinkItem[] = [
+  { href: '#', label: 'Campanhas', icon: Megaphone, permissionKey: 'hasMarketing', soon: true },
+];
+
+const analyticsLinks: NavLinkItem[] = [
+  { href: '/dashboard/billing', label: 'Faturamento', icon: CircleDollarSign, permissionKey: 'hasBilling', soon: true },
+  { href: '#', label: 'Financeiro', icon: PiggyBank, permissionKey: 'hasReports', soon: true },
+  { href: '#', label: 'Relatórios', icon: BarChartHorizontal, permissionKey: 'hasReports', soon: true },
 ];
 
 const footerNavLinks: NavLinkItem[] = [
@@ -86,21 +101,19 @@ function NavLink({ link, isSidebarOpen, pathname }: NavLinkProps) {
 export function SidebarNav({ isSidebarOpen, permissions }: SidebarNavProps) {
   const pathname = usePathname();
 
-  // ===================================================================
-  // 4. FILTRAR OS LINKS DE RECURSOS COM BASE NAS PERMISSÕES RECEBIDAS
-  // ===================================================================
-  const availableResources = resourcesLinks.filter(link => {
-    // Se o link não tiver uma chave de permissão, ele é sempre mostrado.
-    if (!link.permissionKey) {
-      return true; 
-    }
-    // Caso contrário, verifique se a permissão correspondente é 'true'.
-    return permissions[link.permissionKey] === true;
-  });
-  // ===================================================================
+  const filterLinks = (links: NavLinkItem[]) => {
+    return links.filter(link => {
+      if (!link.permissionKey) return true;
+      return permissions[link.permissionKey] === true;
+    });
+  };
+
+  const availableResources = filterLinks(resourcesLinks);
+  const availableMarketing = filterLinks(marketingLinks);
+  const availableAnalytics = filterLinks(analyticsLinks);
 
   return (
-    <nav className="flex flex-col flex-1 p-2">
+    <nav className="flex flex-col flex-1 p-2 overflow-y-auto">
       <div>
         <h3 className={`px-4 pt-2 pb-1 text-xs font-semibold text-gray-400 uppercase tracking-wider ${!isSidebarOpen && 'hidden'}`}>
           Gestão
@@ -112,7 +125,6 @@ export function SidebarNav({ isSidebarOpen, permissions }: SidebarNavProps) {
         </div>
       </div>
       
-      {/* 5. Renderizar a seção de Recursos apenas se houver links disponíveis */}
       {availableResources.length > 0 && (
         <div className="mt-4">
           <h3 className={`px-4 pt-2 pb-1 text-xs font-semibold text-gray-400 uppercase tracking-wider ${!isSidebarOpen && 'hidden'}`}>
@@ -120,6 +132,32 @@ export function SidebarNav({ isSidebarOpen, permissions }: SidebarNavProps) {
           </h3>
           <div className="space-y-1">
             {availableResources.map((link) => (
+              <NavLink key={link.label} link={link} isSidebarOpen={isSidebarOpen} pathname={pathname} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {availableMarketing.length > 0 && (
+        <div className="mt-4">
+          <h3 className={`px-4 pt-2 pb-1 text-xs font-semibold text-gray-400 uppercase tracking-wider ${!isSidebarOpen && 'hidden'}`}>
+            Marketing
+          </h3>
+          <div className="space-y-1">
+            {availableMarketing.map((link) => (
+              <NavLink key={link.label} link={link} isSidebarOpen={isSidebarOpen} pathname={pathname} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {availableAnalytics.length > 0 && (
+        <div className="mt-4">
+          <h3 className={`px-4 pt-2 pb-1 text-xs font-semibold text-gray-400 uppercase tracking-wider ${!isSidebarOpen && 'hidden'}`}>
+            Análise
+          </h3>
+          <div className="space-y-1">
+            {availableAnalytics.map((link) => (
               <NavLink key={link.label} link={link} isSidebarOpen={isSidebarOpen} pathname={pathname} />
             ))}
           </div>

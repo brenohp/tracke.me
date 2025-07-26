@@ -3,13 +3,18 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { verifyToken } from '@/lib/session';
 import { DashboardShell } from './_components/DashboardShell';
-import prisma from '@/lib/prisma'; // 1. Importar o Prisma
+import prisma from '@/lib/prisma';
 
-// Definindo a estrutura das permissões que esperamos
+// ===================================================================
+// INTERFACE ATUALIZADA COM AS NOVAS PERMISSÕES
+// ===================================================================
 export interface PlanPermissions {
   hasPackages?: boolean;
   hasBilling?: boolean;
   hasInventory?: boolean;
+  hasAutomation?: boolean;
+  hasMarketing?: boolean;
+  hasReports?: boolean;
 }
 
 export default async function DashboardLayout({
@@ -29,17 +34,14 @@ export default async function DashboardLayout({
     redirect('/admin');
   }
 
-  // ===================================================================
-  // 2. BUSCAR AS PERMISSÕES DO PLANO DO USUÁRIO
-  // ===================================================================
-  let permissions: PlanPermissions = {}; // Permissões padrão: nenhuma
+  let permissions: PlanPermissions = {};
   
   try {
     const businessWithPlan = await prisma.business.findUnique({
       where: { id: session.businessId },
       select: {
         plan: {
-          select: { permissions: true } // Buscando o novo campo 'permissions'
+          select: { permissions: true }
         }
       }
     });
@@ -50,10 +52,8 @@ export default async function DashboardLayout({
   } catch (error) {
     console.error("Falha ao buscar permissões do plano:", error);
   }
-  // ===================================================================
 
   return (
-    // 3. Passar as permissões para o componente de cliente
     <DashboardShell permissions={permissions}>
       {children}
     </DashboardShell>
