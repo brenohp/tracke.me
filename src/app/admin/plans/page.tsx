@@ -4,13 +4,13 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { verifyToken } from '@/lib/session';
 import prisma from '@/lib/prisma';
-import PlansView from './_components/PlansView'; // Vamos criar este ficheiro a seguir
+import PlansView from './_components/PlansView';
 
 // Função para buscar os dados de todos os planos no servidor
 async function getPlansData() {
   const plans = await prisma.plan.findMany({
     orderBy: {
-      price: 'asc', // Ordena do mais barato para o mais caro
+      price: 'asc',
     },
   });
   
@@ -18,7 +18,6 @@ async function getPlansData() {
 }
 
 export default async function AdminPlansPage() {
-  // Segurança em camadas: verificamos a sessão novamente aqui
   const cookieStore = await cookies();
   const token = cookieStore.get('token')?.value;
   const session = verifyToken(token || '');
@@ -33,8 +32,11 @@ export default async function AdminPlansPage() {
   const serializablePlans = plans.map(plan => ({
     ...plan,
     price: plan.price.toString(),
-    // Converte o campo Json para uma string para passar ao cliente
-    features: JSON.stringify(plan.features), 
+    features: JSON.stringify(plan.features),
+    // ===================================================================
+    // ADICIONADO AQUI: Serializar o novo campo 'permissions'
+    // ===================================================================
+    permissions: JSON.stringify(plan.permissions),
     createdAt: plan.createdAt.toISOString(),
     updatedAt: plan.updatedAt.toISOString(),
   }));

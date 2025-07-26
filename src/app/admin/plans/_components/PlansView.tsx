@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation';
 import { FilePenLine } from 'lucide-react';
 import Modal from '@/components/ui/Modal';
 import PlanForm from './PlanForm';
-// A importação do 'toast' foi removida daqui, pois não é usada.
 
 // Tipo para um plano já serializado
 interface SerializablePlan {
@@ -15,6 +14,7 @@ interface SerializablePlan {
   description: string | null;
   price: string;
   features: string;
+  permissions?: string; // <-- ADICIONADO AQUI
   active: boolean;
 }
 
@@ -24,33 +24,27 @@ interface PlansViewProps {
 
 export default function PlansView({ plans }: PlansViewProps) {
   const router = useRouter();
-
-  // Estados para os modais
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [planToEdit, setPlanToEdit] = useState<SerializablePlan | null>(null);
 
   const handleSuccess = () => {
     setIsCreateModalOpen(false);
     setPlanToEdit(null);
-    router.refresh(); // O router é usado aqui para atualizar os dados
+    router.refresh();
   };
 
   return (
     <div>
       <header className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-brand-primary">
-            Gestão de Planos
-          </h1>
-          <p className="text-brand-accent mt-1">
-            Crie e gerencie os planos de assinatura do Tracke.me.
-          </p>
+          <h1 className="text-3xl font-bold text-brand-primary">Gestão de Planos</h1>
+          <p className="text-brand-accent mt-1">Crie e gerencie os planos de assinatura do Tracke.me.</p>
         </div>
         <button 
           onClick={() => setIsCreateModalOpen(true)}
           className="px-4 py-2 font-semibold text-white bg-brand-accent rounded-lg hover:bg-opacity-90"
         >
-            + Novo Plano
+          + Novo Plano
         </button>
       </header>
 
@@ -103,21 +97,11 @@ export default function PlansView({ plans }: PlansViewProps) {
         </div>
       </div>
       
-      {/* Modal para CRIAR um plano */}
-      <Modal
-        title="Criar Novo Plano"
-        isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
-      >
+      <Modal title="Criar Novo Plano" isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)}>
         <PlanForm onSuccess={handleSuccess} />
       </Modal>
       
-      {/* Modal para EDITAR um plano */}
-      <Modal
-        title="Editar Plano"
-        isOpen={!!planToEdit}
-        onClose={() => setPlanToEdit(null)}
-      >
+      <Modal title="Editar Plano" isOpen={!!planToEdit} onClose={() => setPlanToEdit(null)}>
         <PlanForm 
           initialData={planToEdit}
           onSuccess={handleSuccess} 

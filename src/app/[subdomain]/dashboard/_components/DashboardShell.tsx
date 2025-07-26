@@ -8,8 +8,10 @@ import { SidebarNav } from './SidebarNav';
 import { usePathname } from 'next/navigation';
 import { UserProfile } from './UserProfile';
 import { AuthProvider } from '@/contexts/SessionProvider';
+import type { PlanPermissions } from '../layout'; // 1. Importar o tipo
 
-export function DashboardShell({ children }: { children: ReactNode }) {
+// 2. Adicionar 'permissions' às props do componente
+export function DashboardShell({ children, permissions }: { children: ReactNode, permissions: PlanPermissions }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
@@ -51,7 +53,11 @@ export function DashboardShell({ children }: { children: ReactNode }) {
             </button>
           </div>
 
-          <SidebarNav isSidebarOpen={isSidebarOpen} />
+          {/* =================================================================== */}
+          {/* 3. Passar a prop 'permissions' para o SidebarNav                  */}
+          {/* =================================================================== */}
+          <SidebarNav isSidebarOpen={isSidebarOpen} permissions={permissions} />
+
         </aside>
 
         <div className="flex-1 flex flex-col overflow-hidden">

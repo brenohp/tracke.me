@@ -126,8 +126,9 @@ model Plan {
   features    Json
   active      Boolean  @default(true)
 
-  businesses  Business[]
+  permissions Json     @default("{}") // Novo campo para as permissões da UI
 
+  businesses  Business[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }

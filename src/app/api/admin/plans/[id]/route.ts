@@ -6,7 +6,7 @@ import prisma from '@/lib/prisma';
 import { verifyToken } from '@/lib/session';
 import { revalidatePath } from 'next/cache';
 
-// Função para ATUALIZAR (EDITAR) um plano
+// Função PUT (ATUALIZAR) atualizada
 export async function PUT(
   request: Request,
   { params }: { params: { id: string } }
@@ -22,7 +22,8 @@ export async function PUT(
 
   try {
     const body = await request.json();
-    const { name, description, price, features, active } = body;
+    // 1. Extrair o novo campo 'permissions' do corpo da requisição
+    const { name, description, price, features, permissions, active } = body;
 
     if (!name || price === undefined) {
       return NextResponse.json({ message: 'Nome e preço são obrigatórios.' }, { status: 400 });
@@ -35,11 +36,13 @@ export async function PUT(
         description,
         price,
         features,
+        permissions, // 2. Adicionar 'permissions' aos dados a serem salvos
         active,
       },
     });
 
     revalidatePath('/admin/plans');
+    revalidatePath('/');
     return NextResponse.json(updatedPlan, { status: 200 });
 
   } catch (error) {
@@ -48,7 +51,7 @@ export async function PUT(
   }
 }
 
-// Função para EXCLUIR um plano
+// A função DELETE não precisa de alterações
 export async function DELETE(
   _request: Request,
   { params }: { params: { id: string } }
@@ -63,12 +66,12 @@ export async function DELETE(
   }
 
   try {
-    // No futuro, podemos adicionar uma verificação para não deixar apagar um plano que tenha assinantes
     await prisma.plan.delete({
       where: { id: planId },
     });
 
     revalidatePath('/admin/plans');
+    revalidatePath('/'); 
     return NextResponse.json({ message: 'Plano excluído com sucesso.' }, { status: 200 });
   } catch (error) {
     console.error(`Erro ao excluir plano ${planId}:`, error);

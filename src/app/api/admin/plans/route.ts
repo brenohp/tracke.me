@@ -6,7 +6,7 @@ import prisma from '@/lib/prisma';
 import { verifyToken } from '@/lib/session';
 import { revalidatePath } from 'next/cache';
 
-// Função para LISTAR todos os planos (Apenas para ADMIN)
+// A função GET não precisa de alterações
 export async function GET() {
   const cookieStore = await cookies();
   const token = cookieStore.get('token')?.value;
@@ -29,7 +29,7 @@ export async function GET() {
   }
 }
 
-// Função para CRIAR um novo plano (Apenas para ADMIN)
+// Função POST (CRIAR) atualizada
 export async function POST(request: Request) {
   const cookieStore = await cookies();
   const token = cookieStore.get('token')?.value;
@@ -41,7 +41,8 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    const { name, description, price, features, active } = body;
+    // 1. Extrair o novo campo 'permissions' do corpo da requisição
+    const { name, description, price, features, permissions, active } = body;
 
     if (!name || price === undefined) {
       return NextResponse.json({ message: 'Nome e preço são obrigatórios.' }, { status: 400 });
@@ -53,12 +54,13 @@ export async function POST(request: Request) {
         description,
         price,
         features,
+        permissions, // 2. Adicionar 'permissions' aos dados a serem salvos
         active,
       },
     });
     
-    // Invalida o cache da página de planos para que a lista seja atualizada
     revalidatePath('/admin/plans');
+    revalidatePath('/');
 
     return NextResponse.json(newPlan, { status: 201 });
 
