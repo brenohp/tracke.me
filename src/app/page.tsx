@@ -1,6 +1,6 @@
 // Caminho: src/app/page.tsx
 import Header from '@/components/Header';
-// 1. Novos ícones importados
+// Ícones importados, incluindo Star que será usado na nova seção
 import { MessageCircle, CalendarDays, Users, BarChart3, Package, BellRing, Mail, Phone, Check, Star } from 'lucide-react';
 import Link from 'next/link';
 
@@ -39,8 +39,6 @@ export default function LandingPage() {
                       Ferramentas poderosas e intuitivas para elevar o nível do seu atendimento e gestão.
                   </p>
                 </div>
-
-                {/* 2. Grid agora com 3 colunas para melhor visualização */}
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
                   <div className="bg-brand-background p-6 rounded-lg">
                     <MessageCircle className="h-10 w-10 text-brand-accent mb-4" />
@@ -57,7 +55,6 @@ export default function LandingPage() {
                     <h3 className="text-xl font-bold mb-2">Base de Clientes (CRM)</h3>
                     <p className="text-gray-600">Tenha o histórico de cada cliente na palma da sua mão. Anote preferências e nunca mais perca um contato importante.</p>
                   </div>
-                  {/* NOVOS CARDS ADICIONADOS */}
                   <div className="bg-brand-background p-6 rounded-lg">
                     <Package className="h-10 w-10 text-brand-accent mb-4" />
                     <h3 className="text-xl font-bold mb-2">Gestão de Pacotes</h3>
@@ -77,8 +74,7 @@ export default function LandingPage() {
             </div>
         </section>
 
-        {/* Secção de Planos */}
-       {/* Secção de Planos (ATUALIZADA) */}
+        {/* Secção de Planos (ATUALIZADA) */}
         <section id="pricing" className="py-20 bg-brand-background">
             <div className="container mx-auto px-6 text-center">
                 <h2 className="text-3xl md:text-4xl font-bold">Um plano para cada fase do seu negócio.</h2>
@@ -96,7 +92,6 @@ export default function LandingPage() {
                             <li className="flex items-center"><Check className="h-5 w-5 text-green-500 mr-3"/> Gestão de Clientes</li>
                             <li className="flex items-center"><Check className="h-5 w-5 text-green-500 mr-3"/> 1 Membro na Equipe</li>
                         </ul>
-                        {/* CORREÇÃO: Link alterado para a secção de planos */}
                         <Link href="#pricing" className="block w-full mt-8 bg-gray-200 text-brand-primary px-8 py-3 rounded-lg font-semibold text-lg hover:bg-gray-300 transition-all">
                             Começar Agora
                         </Link>
@@ -118,7 +113,6 @@ export default function LandingPage() {
                             <li className="flex items-center"><Check className="h-5 w-5 text-green-500 mr-3"/> Relatórios Básicos de Performance</li>
                             <li className="flex items-center"><Check className="h-5 w-5 text-green-500 mr-3"/> Suporte via Email e Chat</li>
                         </ul>
-                        {/* CORREÇÃO: Link alterado para a secção de planos */}
                         <Link href="#pricing" className="block w-full mt-8 bg-brand-accent text-white px-8 py-3 rounded-lg font-semibold text-lg hover:bg-opacity-90 transition-all">
                             Iniciar Teste de 7 Dias
                         </Link>
@@ -137,7 +131,6 @@ export default function LandingPage() {
                             <li className="flex items-center"><Star className="h-5 w-5 text-yellow-500 mr-3"/> Relatórios Avançados com Insights</li>
                             <li className="flex items-center"><Star className="h-5 w-5 text-yellow-500 mr-3"/> Suporte Prioritário por Telefone</li>
                         </ul>
-                        {/* CORREÇÃO: Link alterado para a secção de planos */}
                         <Link href="#pricing" className="block w-full mt-8 bg-white text-brand-accent px-8 py-3 rounded-lg font-semibold text-lg border border-brand-accent hover:bg-brand-accent-light transition-all">
                             Iniciar Teste de 7 Dias
                         </Link>
@@ -146,10 +139,28 @@ export default function LandingPage() {
             </div>
         </section>
 
+        {/* =================================================================== */}
+        {/* NOVA SEÇÃO DE SERVIÇOS PREMIUM ADICIONADA AQUI                    */}
+        {/* =================================================================== */}
+        <section id="premium-services" className="py-20 bg-brand-accent-light">
+          <div className="container mx-auto px-6 text-center">
+              <Star className="h-10 w-10 text-brand-accent mx-auto mb-4" />
+              <h2 className="text-3xl font-bold text-brand-primary">Leve sua gestão para o próximo nível</h2>
+              <p className="mt-4 text-lg text-gray-700 max-w-3xl mx-auto">
+                Gosta do nosso serviço e nossa interface e deseja funcionalidades e serviços <span className="font-semibold text-brand-primary">personalizadas premium</span>? Entre em contato com nossa equipe!
+              </p>
+              <div className="mt-8">
+                  <Link 
+                    href="mailto:premium@tracke.me?subject=Contato%20para%20Serviços%20Premium"
+                    className="bg-brand-primary text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-opacity-90 transition-transform hover:scale-105"
+                  >
+                    Solicitar Orçamento Premium
+                  </Link>
+              </div>
+          </div>
+        </section>
 
-        {/* =================================== */}
-        {/* 3. NOVA SECÇÃO DE CONTATO           */}
-        {/* =================================== */}
+        {/* Seção de Contato Geral (já existente) */}
         <section id="contact" className="py-20 bg-white">
             <div className="container mx-auto px-6 text-center">
                 <h2 className="text-3xl md:text-4xl font-bold">Tem alguma dúvida?</h2>

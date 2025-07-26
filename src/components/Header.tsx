@@ -15,11 +15,14 @@ export default function Header() {
           Tracke.me
         </Link>
 
-        {/* Menu Desktop */}
+        {/* =================================================================== */}
+        {/* ALTERAÇÃO 1: Menu Desktop atualizado                            */}
+        {/* =================================================================== */}
         <nav className="hidden md:flex items-center space-x-8">
           <Link href="#features" className="text-gray-600 hover:text-brand-accent transition-colors">Funcionalidades</Link>
           <Link href="#pricing" className="text-gray-600 hover:text-brand-accent transition-colors">Planos</Link>
-          <Link href="#contact" className="text-gray-600 hover:text-brand-accent transition-colors">Contato</Link>
+          <Link href="#premium-services" className="text-gray-600 hover:text-brand-accent transition-colors">Serviços Premium</Link>
+          <Link href="#contact" className="text-gray-600 hover:text-brand-accent transition-colors">Dúvidas?</Link>
         </nav>
 
         <div className="hidden md:flex items-center space-x-4">
@@ -42,10 +45,14 @@ export default function Header() {
       {/* Menu Mobile Dropdown */}
       {isOpen && (
         <div className="md:hidden bg-white shadow-lg">
+          {/* =================================================================== */}
+          {/* ALTERAÇÃO 2: Menu Mobile atualizado                             */}
+          {/* =================================================================== */}
           <nav className="flex flex-col items-center space-y-4 py-6">
             <Link href="#features" onClick={() => setIsOpen(false)} className="text-gray-600 hover:text-brand-accent transition-colors">Funcionalidades</Link>
             <Link href="#pricing" onClick={() => setIsOpen(false)} className="text-gray-600 hover:text-brand-accent transition-colors">Planos</Link>
-            <Link href="#contact" onClick={() => setIsOpen(false)} className="text-gray-600 hover:text-brand-accent transition-colors">Contato</Link>
+            <Link href="#premium-services" onClick={() => setIsOpen(false)} className="text-gray-600 hover:text-brand-accent transition-colors">Serviços Premium</Link>
+            <Link href="#contact" onClick={() => setIsOpen(false)} className="text-gray-600 hover:text-brand-accent transition-colors">Dúvidas?</Link>
             <hr className="w-4/5"/>
             <Link href="/login" onClick={() => setIsOpen(false)} className="text-brand-accent font-semibold hover:underline">
               Entrar
