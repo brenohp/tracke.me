@@ -1,4 +1,4 @@
-// schema.prisma - Versão Final e Corrigida
+// schema.prisma - Versão com Notificações
 
 generator client {
   provider = "prisma-client-js"
@@ -11,14 +11,20 @@ datasource db {
 }
 
 model Business {
-  id        String @id @default(cuid())
-  name      String
-  phone     String?
-  status    String @default("ACTIVE")
-  subdomain String @unique
-
-  planId    String?
-  plan      Plan?     @relation(fields: [planId], references: [id])
+  id                  String  @id @default(cuid())
+  name                String  @unique
+  phone               String?
+  status              String  @default("ACTIVE")
+  subdomain           String  @unique
+  addressStreet       String?
+  addressNumber       String?
+  addressComplement   String?
+  addressNeighborhood String?
+  addressCity         String?
+  addressState        String?
+  addressZipCode      String?
+  planId              String?
+  plan                Plan?   @relation(fields: [planId], references: [id])
   
   users     User[]
   services  Service[]
@@ -29,12 +35,11 @@ model Business {
 }
 
 model User {
-  id       String   @id @default(cuid())
-  name     String
-  email    String   @unique
-  password String
-  role     Role     @default(OWNER)
-
+  id         String   @id @default(cuid())
+  name       String
+  email      String   @unique
+  password   String
+  role       Role     @default(OWNER)
   businessId String
   business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
@@ -42,6 +47,11 @@ model User {
   availabilities Availability[]
   timeOffs       TimeOff[]
   appointments   Appointment[]  @relation("ProfessionalAppointments")
+  
+  // ===================================
+  // RELAÇÃO ADICIONADA AQUI
+  // ===================================
+  notifications  Notification[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -54,27 +64,23 @@ model Service {
   price             Decimal       @db.Decimal(10, 2)
   durationInMinutes Int
   status            ServiceStatus @default(ACTIVE)
-
-  businessId String
-  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-
-  professionals User[] @relation("ProfessionalsOnServices")
-  appointments Appointment[]
+  businessId        String
+  business          Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  professionals     User[]        @relation("ProfessionalsOnServices")
+  appointments      Appointment[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 model Client {
-  id           String  @id @default(cuid())
+  id           String        @id @default(cuid())
   name         String
   phone        String?
   email        String?
   observations String?
-
-  businessId String
-  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-
+  businessId   String
+  business     Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
   appointments Appointment[]
 
   createdAt DateTime @default(now())
@@ -86,18 +92,15 @@ model Appointment {
   startTime      DateTime
   endTime        DateTime
   status         AppointmentStatus @default(SCHEDULED)
-
   clientId       String
-  client         Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
-
+  client         Client            @relation(fields: [clientId], references: [id], onDelete: Cascade)
   serviceId      String
-  service        Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
-
+  service        Service           @relation(fields: [serviceId], references: [id], onDelete: Cascade)
   professionalId String
-  professional   User @relation("ProfessionalAppointments", fields: [professionalId], references: [id], onDelete: Cascade)
+  professional   User              @relation("ProfessionalAppointments", fields: [professionalId], references: [id], onDelete: Cascade)
 
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Availability {
@@ -125,26 +128,37 @@ model Plan {
   price       Decimal  @db.Decimal(10, 2)
   features    Json
   active      Boolean  @default(true)
-
-  permissions Json     @default("{}") // Novo campo para as permissões da UI
-
+  permissions Json     @default("{}")
   businesses  Business[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
-// ===================================
-// NOVO MODELO ADICIONADO
-// ===================================
 model Coupon {
-  id            String      @id @default(cuid())
-  code          String      @unique // O código do cupom, ex: "LANCAMENTO2025"
-  discountType  DiscountType // O tipo de desconto
-  discountValue Decimal?    // O valor (ex: 50.00) ou percentagem (ex: 10) do desconto
-  expiresAt     DateTime?   // Data de validade do cupom
-  active        Boolean     @default(true)
+  id            String       @id @default(cuid())
+  code          String       @unique
+  discountType  DiscountType
+  discountValue Decimal?
+  expiresAt     DateTime?
+  active        Boolean      @default(true)
 
-  createdAt     DateTime @default(now())
+  createdAt DateTime @default(now())
+}
+
+model Notification {
+  id        String    @id @default(cuid())
+  message   String
+  read      Boolean   @default(false)
+  url       String?
+  
+  // CAMPO 'TYPE' ADICIONADO
+  type      NotificationType @default(GENERIC)
+
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime  @default(now())
 }
 
 enum Role {
@@ -166,11 +180,18 @@ enum ServiceStatus {
   INACTIVE
 }
 
-// ===================================
-// NOVO ENUM ADICIONADO
-// ===================================
 enum DiscountType {
-  PERCENTAGE // Desconto em percentagem
-  FIXED      // Desconto de valor fixo
-  FREE_TRIAL // Libera um período de teste gratuito
+  PERCENTAGE
+  FIXED
+  FREE_TRIAL
+}
+
+// NOVO ENUM PARA OS TIPOS DE NOTIFICAÇÃO
+enum NotificationType {
+  GENERIC
+  NEW_APPOINTMENT
+  APPOINTMENT_CONFIRMED
+  APPOINTMENT_CANCELED
+  APPOINTMENT_COMPLETED
+  SYSTEM_UPDATE
 }
