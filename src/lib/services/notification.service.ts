@@ -24,7 +24,7 @@ const getNotificationTypeFromStatus = (status: AppointmentStatus): NotificationT
 export const NotificationService = {
   
   async newAppointment(appointment: Appointment, client: Client, professional: User) {
-    // ... (código desta função permanece o mesmo)
+    // As notificações de agendamento devem ter uma URL relativa, pois apontam para dentro do dashboard do subdomínio.
     try {
       const businessOwner = await prisma.user.findFirst({
         where: { businessId: professional.businessId, role: 'OWNER' },
@@ -45,7 +45,7 @@ export const NotificationService = {
   },
 
   async appointmentStatusChanged(appointment: Appointment, client: Client, professional: User) {
-    // ... (código desta função permanece o mesmo)
+    // As notificações de agendamento devem ter uma URL relativa.
     try {
       const businessOwner = await prisma.user.findFirst({
         where: { businessId: professional.businessId, role: 'OWNER' },
@@ -66,9 +66,6 @@ export const NotificationService = {
     }
   },
 
-  // ===================================================================
-  // FUNÇÃO DE COMUNICADOS ATUALIZADA PARA ENVIAR PAYLOAD COMPLETO
-  // ===================================================================
   async systemUpdate(message: string, targetPlanId: string | null) {
     try {
       const whereClause = {
@@ -82,11 +79,18 @@ export const NotificationService = {
       });
 
       if (targetUsers.length === 0) {
-        console.log('[NotificationService] Nenhum usuário encontrado para o comunicado.');
         return;
       }
+
+      // =======================================================
+      // CORREÇÃO APLICADA AQUI
+      // =======================================================
+      // 1. Pega o domínio principal a partir do arquivo .env
+      const appDomain = process.env.NEXT_PUBLIC_APP_DOMAIN || 'lvh.me:3000';
+      const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
+      // 2. Monta a URL completa para a página de updates
+      const updatesUrl = `${protocol}://${appDomain}/updates`;
       
-      // 1. Criamos as notificações e obtemos os registros completos de volta
       const createdNotifications = await Promise.all(
         targetUsers.map(user => 
           prisma.notification.create({
@@ -94,19 +98,18 @@ export const NotificationService = {
               userId: user.id,
               message,
               type: 'SYSTEM_UPDATE' as const,
+              url: updatesUrl, // 3. Usa a URL completa
             }
           })
         )
       );
 
-      // 2. Preparamos os eventos para o Pusher com os dados completos
       const events = createdNotifications.map(notification => ({
         channel: `private-notifications-${notification.userId}`,
         name: 'new-notification',
-        data: notification, // Agora 'data' contém o objeto completo com 'id' e 'createdAt'
+        data: notification,
       }));
       
-      // 3. Usamos triggerBatch para eficiência
       await pusherServer.triggerBatch(events);
 
     } catch (error) {
