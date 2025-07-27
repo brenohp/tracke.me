@@ -12,7 +12,7 @@ import {
   BadgeDollarSign,
   LineChart,
   Megaphone,
-  Ticket // 1. Ícone para Cupões
+  Ticket
 } from 'lucide-react';
 
 interface NavLinkItem {
@@ -22,16 +22,15 @@ interface NavLinkItem {
   soon?: boolean;
 }
 
-// 2. Lista de links atualizada
 const navLinks: NavLinkItem[] = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/admin/businesses', label: 'Negócios', icon: Building },
   { href: '/admin/users', label: 'Usuários', icon: Users },
   { href: '/admin/plans', label: 'Planos', icon: CreditCard },
-  { href: '/admin/coupons', label: 'Cupões', icon: Ticket }, // Link agora ativo
+  { href: '/admin/coupons', label: 'Cupões', icon: Ticket },
   { href: '#', label: 'Assinaturas', icon: BadgeDollarSign, soon: true },
   { href: '#', label: 'Analytics', icon: LineChart, soon: true },
-  { href: '#', label: 'Comunicação', icon: Megaphone, soon: true },
+  { href: '/admin/communication', label: 'Comunicação', icon: Megaphone }, // Link ativado
 ];
 
 interface NavLinkProps {
