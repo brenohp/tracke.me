@@ -9,11 +9,12 @@ import { addMinutes, parseISO } from 'date-fns';
 import { NotificationService } from '@/lib/services/notification.service';
 
 // Função para ATUALIZAR (EDITAR) um agendamento
-export async function PUT(
-  request: Request,
-  context: { params: { id: string } } // ASSINATURA CORRIGIDA
-) {
-  const { id: appointmentId } = context.params; // ID pego do 'context'
+export async function PUT(request: Request) {
+  // Extrai o ID manualmente da URL
+  const url = new URL(request.url);
+  const pathnameParts = url.pathname.split('/');
+  const appointmentId = pathnameParts[pathnameParts.indexOf('appointments') + 1];
+
   const cookieStore = await cookies();
   const token = cookieStore.get('token')?.value;
   const session = verifyToken(token || '');
@@ -85,11 +86,12 @@ export async function PUT(
 }
 
 // Função para EXCLUIR um agendamento
-export async function DELETE(
-  request: Request, // O primeiro parâmetro é necessário
-  context: { params: { id: string } } // ASSINATURA CORRIGIDA
-) {
-  const { id: appointmentId } = context.params; // ID pego do 'context'
+export async function DELETE(request: Request) {
+  // Extrai o ID manualmente da URL
+  const url = new URL(request.url);
+  const pathnameParts = url.pathname.split('/');
+  const appointmentId = pathnameParts[pathnameParts.indexOf('appointments') + 1];
+
   const cookieStore = await cookies();
   const token = cookieStore.get('token')?.value;
   const session = verifyToken(token || '');

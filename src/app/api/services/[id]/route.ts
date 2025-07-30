@@ -5,14 +5,12 @@ import prisma from '@/lib/prisma';
 import { verifyToken } from '@/lib/session';
 import { revalidatePath } from 'next/cache';
 
-// A interface 'RouteContext' foi removida.
-
 // Função para ATUALIZAR um cliente
-export async function PUT(
-  request: Request, 
-  context: { params: { id: string } } // ASSINATURA CORRIGIDA
-) {
-  const { id: clientId } = context.params; // ID pego do 'context'
+export async function PUT(request: Request) {
+  // Extrai o ID manualmente da URL
+  const url = new URL(request.url);
+  const pathnameParts = url.pathname.split('/');
+  const clientId = pathnameParts[pathnameParts.indexOf('clients') + 1];
   
   const cookieStore = await cookies();
   const token = cookieStore.get('token')?.value;
@@ -39,7 +37,7 @@ export async function PUT(
       data: { name, phone, email, observations },
     });
     
-    revalidatePath('/dashboard/clients'); // Corrigido para o caminho correto
+    revalidatePath('/dashboard/clients');
 
     return NextResponse.json(updatedClient, { status: 200 });
   } catch (error) {
@@ -49,11 +47,11 @@ export async function PUT(
 }
 
 // Função para DELETAR um cliente
-export async function DELETE(
-  request: Request, // Parâmetro 'request' é necessário
-  context: { params: { id: string } } // ASSINATURA CORRIGIDA
-) {
-  const { id: clientId } = context.params; // ID pego do 'context'
+export async function DELETE(request: Request) {
+  // Extrai o ID manualmente da URL
+  const url = new URL(request.url);
+  const pathnameParts = url.pathname.split('/');
+  const clientId = pathnameParts[pathnameParts.indexOf('clients') + 1];
 
   const cookieStore = await cookies();
   const token = cookieStore.get('token')?.value;
@@ -74,7 +72,7 @@ export async function DELETE(
 
     await prisma.client.delete({ where: { id: clientId } });
     
-    revalidatePath('/dashboard/clients'); // Corrigido para o caminho correto
+    revalidatePath('/dashboard/clients');
 
     return NextResponse.json({ message: 'Cliente excluído com sucesso.' }, { status: 200 });
   } catch (error) {

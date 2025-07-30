@@ -7,11 +7,12 @@ import { verifyToken } from '@/lib/session';
 import { revalidatePath } from 'next/cache';
 
 // Função para ATUALIZAR (EDITAR) um membro
-export async function PUT(
-  request: Request,
-  context: { params: { id: string } }
-) {
-  const { id: memberIdToEdit } = context.params;
+export async function PUT(request: Request) {
+  // Extrai o ID manualmente da URL
+  const url = new URL(request.url);
+  const pathnameParts = url.pathname.split('/');
+  const memberIdToEdit = pathnameParts[pathnameParts.indexOf('team') + 1];
+
   const cookieStore = await cookies();
   const token = cookieStore.get('token')?.value;
   const session = verifyToken(token || '');
@@ -60,7 +61,6 @@ export async function PUT(
 
     revalidatePath('/dashboard/team');
 
-    // CORREÇÃO: Construindo o objeto de retorno manualmente para evitar o aviso do linter
     const memberToReturn = {
       id: updatedMember.id,
       name: updatedMember.name,
@@ -83,11 +83,12 @@ export async function PUT(
 }
 
 // Função para DELETAR um membro
-export async function DELETE(
-  request: Request,
-  context: { params: { id: string } }
-) {
-  const { id: memberIdToDelete } = context.params;
+export async function DELETE(request: Request) {
+  // Extrai o ID manualmente da URL
+  const url = new URL(request.url);
+  const pathnameParts = url.pathname.split('/');
+  const memberIdToDelete = pathnameParts[pathnameParts.indexOf('team') + 1];
+
   const cookieStore = await cookies();
   const token = cookieStore.get('token')?.value;
   const session = verifyToken(token || '');
