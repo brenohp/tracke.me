@@ -6,12 +6,13 @@ import prisma from '@/lib/prisma';
 import { verifyToken } from '@/lib/session';
 import { revalidatePath } from 'next/cache';
 
-// Função para ATUALIZAR (EDITAR) um cupão
-export async function PUT(
-  request: Request,
-  context: { params: { id: string } } // ASSINATURA CORRIGIDA
-) {
-  const { id: couponId } = context.params; // ID pego do 'context'
+// Função para ATUALIZAR (EDITAR) um cupom
+export async function PUT(request: Request) {
+  const url = new URL(request.url);
+  const pathnameParts = url.pathname.split('/');
+  const couponId = pathnameParts[pathnameParts.indexOf('coupons') + 1];
+
+  // CORREÇÃO: Adicionado 'await'
   const cookieStore = await cookies();
   const token = cookieStore.get('token')?.value;
   const session = verifyToken(token || '');
@@ -43,17 +44,18 @@ export async function PUT(
     return NextResponse.json(updatedCoupon, { status: 200 });
 
   } catch (error) {
-    console.error(`Erro ao atualizar cupão ${couponId}:`, error);
+    console.error(`Erro ao atualizar cupom ${couponId}:`, error);
     return NextResponse.json({ message: 'Ocorreu um erro no servidor.' }, { status: 500 });
   }
 }
 
-// Função para EXCLUIR um cupão
-export async function DELETE(
-  request: Request, // O primeiro parâmetro é necessário
-  context: { params: { id: string } } // ASSINATURA CORRIGIDA
-) {
-  const { id: couponId } = context.params; // ID pego do 'context'
+// Função para EXCLUIR um cupom
+export async function DELETE(request: Request) {
+  const url = new URL(request.url);
+  const pathnameParts = url.pathname.split('/');
+  const couponId = pathnameParts[pathnameParts.indexOf('coupons') + 1];
+
+  // CORREÇÃO: Adicionado 'await'
   const cookieStore = await cookies();
   const token = cookieStore.get('token')?.value;
   const session = verifyToken(token || '');
@@ -68,9 +70,9 @@ export async function DELETE(
     });
 
     revalidatePath('/admin/coupons');
-    return NextResponse.json({ message: 'Cupão excluído com sucesso.' }, { status: 200 });
+    return NextResponse.json({ message: 'Cupom excluído com sucesso.' }, { status: 200 });
   } catch (error) {
-    console.error(`Erro ao excluir cupão ${couponId}:`, error);
+    console.error(`Erro ao excluir cupom ${couponId}:`, error);
     return NextResponse.json({ message: 'Ocorreu um erro no servidor.' }, { status: 500 });
   }
 }
