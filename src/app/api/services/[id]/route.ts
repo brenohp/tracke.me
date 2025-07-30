@@ -1,17 +1,19 @@
-// Caminho: src/app/api/services/[id]/route.ts
-
+// Caminho: src/app/api/clients/[id]/route.ts
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import prisma from '@/lib/prisma';
 import { verifyToken } from '@/lib/session';
 import { revalidatePath } from 'next/cache';
 
-// NOVA FUNÇÃO PARA ATUALIZAR (EDITAR) UM SERVIÇO
+// A interface 'RouteContext' foi removida.
+
+// Função para ATUALIZAR um cliente
 export async function PUT(
-  request: Request,
-  { params }: { params: { id: string } }
+  request: Request, 
+  context: { params: { id: string } } // ASSINATURA CORRIGIDA
 ) {
-  // 1. Autenticação e Autorização
+  const { id: clientId } = context.params; // ID pego do 'context'
+  
   const cookieStore = await cookies();
   const token = cookieStore.get('token')?.value;
   const session = verifyToken(token || '');
@@ -20,69 +22,39 @@ export async function PUT(
     return NextResponse.json({ message: 'Não autorizado.' }, { status: 401 });
   }
 
-  if (session.role !== 'OWNER' && session.role !== 'ADMIN') {
-    return NextResponse.json({ message: 'Acesso negado.' }, { status: 403 });
-  }
-
-  const serviceId = params.id;
-
   try {
+    const client = await prisma.client.findFirst({
+      where: { id: clientId, businessId: session.businessId },
+    });
+
+    if (!client) {
+      return NextResponse.json({ message: 'Cliente não encontrado ou acesso negado.' }, { status: 404 });
+    }
+
     const body = await request.json();
-    const { name, description, price, durationInMinutes, professionals, status } = body;
+    const { name, phone, email, observations } = body;
 
-    // Validação básica dos dados recebidos
-    if (!name || !price || !durationInMinutes || !status) {
-      return NextResponse.json({ message: 'Todos os campos são obrigatórios.' }, { status: 400 });
-    }
-    if (!Array.isArray(professionals)) {
-        return NextResponse.json({ message: 'A lista de profissionais é inválida.' }, { status: 400 });
-    }
-
-    // 2. Verificação de Segurança
-    // Garante que o serviço a ser atualizado pertence ao negócio do usuário.
-    const serviceToUpdate = await prisma.service.findFirst({
-        where: { id: serviceId, businessId: session.businessId }
+    const updatedClient = await prisma.client.update({
+      where: { id: clientId },
+      data: { name, phone, email, observations },
     });
+    
+    revalidatePath('/dashboard/clients'); // Corrigido para o caminho correto
 
-    if (!serviceToUpdate) {
-        return NextResponse.json({ message: 'Serviço não encontrado ou não pertence ao seu negócio.' }, { status: 404 });
-    }
-
-    // 3. Atualização do Serviço no Banco de Dados
-    const updatedService = await prisma.service.update({
-      where: { id: serviceId },
-      data: {
-        name,
-        description,
-        price,
-        durationInMinutes,
-        status,
-        // A cláusula 'set' substitui a lista antiga de profissionais pela nova.
-        professionals: {
-          set: professionals.map((id: string) => ({ id })),
-        },
-      },
-    });
-
-    // 4. Revalidação do Cache
-    revalidatePath('/dashboard/services');
-
-    return NextResponse.json(updatedService, { status: 200 });
+    return NextResponse.json(updatedClient, { status: 200 });
   } catch (error) {
-    console.error('Erro ao atualizar serviço:', error);
-    return NextResponse.json(
-      { message: 'Ocorreu um erro no servidor ao atualizar o serviço.' },
-      { status: 500 }
-    );
+    console.error(`Erro ao atualizar cliente ${clientId}:`, error);
+    return NextResponse.json({ message: 'Ocorreu um erro no servidor.' }, { status: 500 });
   }
 }
 
-
-// A sua função DELETE continua aqui, sem alterações.
+// Função para DELETAR um cliente
 export async function DELETE(
-  _request: Request,
-  { params }: { params: { id: string } }
+  request: Request, // Parâmetro 'request' é necessário
+  context: { params: { id: string } } // ASSINATURA CORRIGIDA
 ) {
+  const { id: clientId } = context.params; // ID pego do 'context'
+
   const cookieStore = await cookies();
   const token = cookieStore.get('token')?.value;
   const session = verifyToken(token || '');
@@ -91,39 +63,22 @@ export async function DELETE(
     return NextResponse.json({ message: 'Não autorizado.' }, { status: 401 });
   }
 
-  if (session.role !== 'OWNER' && session.role !== 'ADMIN') {
-    return NextResponse.json({ message: 'Acesso negado.' }, { status: 403 });
-  }
-
-  const serviceId = params.id;
-
   try {
-    const service = await prisma.service.findUnique({
-      where: {
-        id: serviceId,
-        businessId: session.businessId,
-      },
+    const client = await prisma.client.findFirst({
+      where: { id: clientId, businessId: session.businessId },
     });
 
-    if (!service) {
-      return NextResponse.json(
-        { message: 'Serviço não encontrado ou não pertence ao seu negócio.' },
-        { status: 404 }
-      );
+    if (!client) {
+      return NextResponse.json({ message: 'Cliente não encontrado ou acesso negado.' }, { status: 404 });
     }
 
-    await prisma.service.delete({
-      where: { id: serviceId },
-    });
+    await prisma.client.delete({ where: { id: clientId } });
+    
+    revalidatePath('/dashboard/clients'); // Corrigido para o caminho correto
 
-    revalidatePath('/dashboard/services');
-
-    return NextResponse.json({ message: 'Serviço excluído com sucesso.' }, { status: 200 });
+    return NextResponse.json({ message: 'Cliente excluído com sucesso.' }, { status: 200 });
   } catch (error) {
-    console.error('Erro ao excluir serviço:', error);
-    return NextResponse.json(
-      { message: 'Ocorreu um erro no servidor ao excluir o serviço.' },
-      { status: 500 }
-    );
+    console.error(`Erro ao deletar cliente ${clientId}:`, error);
+    return NextResponse.json({ message: 'Ocorreu um erro no servidor.' }, { status: 500 });
   }
 }

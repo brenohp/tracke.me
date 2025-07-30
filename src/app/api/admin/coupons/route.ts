@@ -3,11 +3,11 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import prisma from '@/lib/prisma';
-import { Prisma } from '@prisma/client'; // 1. CORREÇÃO: Importa os tipos do local correto
+// A importação do 'Prisma' foi removida pois usaremos outra abordagem.
 import { verifyToken } from '@/lib/session';
 import { revalidatePath } from 'next/cache';
 
-// Função para LISTAR todos os cupões (Apenas para ADMIN)
+// Função GET (inalterada)
 export async function GET() {
   const cookieStore = await cookies();
   const token = cookieStore.get('token')?.value;
@@ -30,7 +30,7 @@ export async function GET() {
   }
 }
 
-// Função para CRIAR um novo cupão (Apenas para ADMIN)
+// Função POST (corrigida)
 export async function POST(request: Request) {
   const cookieStore = await cookies();
   const token = cookieStore.get('token')?.value;
@@ -62,13 +62,14 @@ export async function POST(request: Request) {
 
     return NextResponse.json(newCoupon, { status: 201 });
 
-  } catch (error: unknown) { // 2. CORREÇÃO: Tratamento de erro de tipo seguro
+  } catch (error: unknown) {
     console.error('Erro ao criar cupão (admin):', error);
     
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      if (error.code === 'P2002') {
-        return NextResponse.json({ message: 'Este código de cupão já está em uso.' }, { status: 409 });
-      }
+    // =======================================================
+    // CORREÇÃO: Verificando as propriedades do erro
+    // =======================================================
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'P2002') {
+      return NextResponse.json({ message: 'Este código de cupão já está em uso.' }, { status: 409 });
     }
     
     return NextResponse.json({ message: 'Ocorreu um erro no servidor.' }, { status: 500 });

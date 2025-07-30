@@ -9,9 +9,9 @@ import { revalidatePath } from 'next/cache';
 // Função para ATUALIZAR (EDITAR) um cupão
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } } // ASSINATURA CORRIGIDA
 ) {
-  const couponId = params.id;
+  const { id: couponId } = context.params; // ID pego do 'context'
   const cookieStore = await cookies();
   const token = cookieStore.get('token')?.value;
   const session = verifyToken(token || '');
@@ -50,10 +50,10 @@ export async function PUT(
 
 // Função para EXCLUIR um cupão
 export async function DELETE(
-  _request: Request,
-  { params }: { params: { id: string } }
+  request: Request, // O primeiro parâmetro é necessário, mesmo que não usado
+  context: { params: { id: string } } // ASSINATURA CORRIGIDA
 ) {
-  const couponId = params.id;
+  const { id: couponId } = context.params; // ID pego do 'context'
   const cookieStore = await cookies();
   const token = cookieStore.get('token')?.value;
   const session = verifyToken(token || '');

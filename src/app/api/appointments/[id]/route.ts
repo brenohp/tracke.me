@@ -6,14 +6,14 @@ import prisma from '@/lib/prisma';
 import { verifyToken } from '@/lib/session';
 import { revalidatePath } from 'next/cache';
 import { addMinutes, parseISO } from 'date-fns';
-import { NotificationService } from '@/lib/services/notification.service'; // 1. IMPORTAR O SERVIÇO
+import { NotificationService } from '@/lib/services/notification.service';
 
 // Função para ATUALIZAR (EDITAR) um agendamento
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } } // ASSINATURA CORRIGIDA
 ) {
-  const appointmentId = params.id;
+  const { id: appointmentId } = context.params; // ID pego do 'context'
   const cookieStore = await cookies();
   const token = cookieStore.get('token')?.value;
   const session = verifyToken(token || '');
@@ -30,7 +30,6 @@ export async function PUT(
       return NextResponse.json({ message: 'Todos os campos são obrigatórios.' }, { status: 400 });
     }
 
-    // Buscamos o estado do agendamento ANTES da atualização para comparar o status
     const appointmentToUpdate = await prisma.appointment.findFirst({
       where: {
         id: appointmentId,
@@ -61,9 +60,6 @@ export async function PUT(
       },
     });
 
-    // ===================================================================
-    // 2. DISPARAR A NOTIFICAÇÃO SE O STATUS MUDOU
-    // ===================================================================
     if (updatedAppointment.status !== appointmentToUpdate.status) {
       try {
         const [client, professional] = await Promise.all([
@@ -72,14 +68,12 @@ export async function PUT(
         ]);
 
         if (client && professional) {
-          // Chamamos a nova função do serviço (fire-and-forget)
           NotificationService.appointmentStatusChanged(updatedAppointment, client, professional);
         }
       } catch (notificationError) {
         console.error("Falha ao disparar a notificação de mudança de status:", notificationError);
       }
     }
-    // ===================================================================
 
     revalidatePath('/dashboard/schedule');
     return NextResponse.json(updatedAppointment, { status: 200 });
@@ -90,42 +84,40 @@ export async function PUT(
   }
 }
 
-// A função DELETE não precisa de alterações, a menos que você queira notificar sobre exclusões.
-// Por enquanto, a deixaremos como está.
+// Função para EXCLUIR um agendamento
 export async function DELETE(
-  _request: Request,
-  { params }: { params: { id: string } }
+  request: Request, // O primeiro parâmetro é necessário
+  context: { params: { id: string } } // ASSINATURA CORRIGIDA
 ) {
-  // ...código da função DELETE permanece o mesmo...
-  const appointmentId = params.id;
-  const cookieStore = await cookies();
-  const token = cookieStore.get('token')?.value;
-  const session = verifyToken(token || '');
+  const { id: appointmentId } = context.params; // ID pego do 'context'
+  const cookieStore = await cookies();
+  const token = cookieStore.get('token')?.value;
+  const session = verifyToken(token || '');
 
-  if (!session || !session.businessId) {
-    return NextResponse.json({ message: 'Não autorizado.' }, { status: 401 });
-  }
-  
-  try {
-    const appointmentToDelete = await prisma.appointment.findFirst({
-      where: {
-        id: appointmentId,
-        service: { businessId: session.businessId }
-      }
-    });
+  if (!session || !session.businessId) {
+    return NextResponse.json({ message: 'Não autorizado.' }, { status: 401 });
+  }
+  
+  try {
+    const appointmentToDelete = await prisma.appointment.findFirst({
+      where: {
+        id: appointmentId,
+        service: { businessId: session.businessId }
+      }
+    });
 
-    if (!appointmentToDelete) {
-      return NextResponse.json({ message: 'Agendamento não encontrado ou acesso negado.' }, { status: 404 });
-    }
+    if (!appointmentToDelete) {
+      return NextResponse.json({ message: 'Agendamento não encontrado ou acesso negado.' }, { status: 404 });
+    }
 
-    await prisma.appointment.delete({
-      where: { id: appointmentId },
-    });
+    await prisma.appointment.delete({
+      where: { id: appointmentId },
+    });
 
-    revalidatePath('/dashboard/schedule');
-    return NextResponse.json({ message: 'Agendamento excluído com sucesso.' }, { status: 200 });
-  } catch (error) {
-    console.error(`Erro ao excluir agendamento ${appointmentId}:`, error);
-    return NextResponse.json({ message: 'Ocorreu um erro no servidor.' }, { status: 500 });
-  }
+    revalidatePath('/dashboard/schedule');
+    return NextResponse.json({ message: 'Agendamento excluído com sucesso.' }, { status: 200 });
+  } catch (error) {
+    console.error(`Erro ao excluir agendamento ${appointmentId}:`, error);
+    return NextResponse.json({ message: 'Ocorreu um erro no servidor.' }, { status: 500 });
+  }
 }

@@ -1,19 +1,19 @@
 // Caminho: src/app/api/clients/[id]/route.ts
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers'; // Importa o helper de cookies
+import { cookies } from 'next/headers';
 import prisma from '@/lib/prisma';
 import { verifyToken } from '@/lib/session';
 import { revalidatePath } from 'next/cache';
 
-interface RouteContext {
-  params: { id: string };
-}
+// A interface 'RouteContext' foi removida.
 
-// Função para ATUALIZAR um cliente (CORRIGIDA)
-export async function PUT(request: Request, { params }: RouteContext) {
-  const clientId = params.id;
+// Função para ATUALIZAR um cliente
+export async function PUT(
+  request: Request, 
+  context: { params: { id: string } } // ASSINATURA CORRIGIDA
+) {
+  const { id: clientId } = context.params; // ID pego do 'context'
   
-  // Lógica de autenticação corrigida para ler o cookie
   const cookieStore = await cookies();
   const token = cookieStore.get('token')?.value;
   const session = verifyToken(token || '');
@@ -32,19 +32,14 @@ export async function PUT(request: Request, { params }: RouteContext) {
     }
 
     const body = await request.json();
-    const { name, phone, email, observations } = body; // Adicionado 'observations'
+    const { name, phone, email, observations } = body;
 
     const updatedClient = await prisma.client.update({
       where: { id: clientId },
-      data: {
-        name,
-        phone,
-        email,
-        observations,
-      },
+      data: { name, phone, email, observations },
     });
     
-    revalidatePath('/dashboard/clientes');
+    revalidatePath('/dashboard/clients'); // Corrigido para o caminho correto
 
     return NextResponse.json(updatedClient, { status: 200 });
   } catch (error) {
@@ -53,11 +48,13 @@ export async function PUT(request: Request, { params }: RouteContext) {
   }
 }
 
-// Função para DELETAR um cliente (CORRIGIDA)
-export async function DELETE(_request: Request, { params }: RouteContext) {
-  const clientId = params.id;
+// Função para DELETAR um cliente
+export async function DELETE(
+  request: Request, // Parâmetro 'request' é necessário
+  context: { params: { id: string } } // ASSINATURA CORRIGIDA
+) {
+  const { id: clientId } = context.params; // ID pego do 'context'
 
-  // Lógica de autenticação corrigida para ler o cookie
   const cookieStore = await cookies();
   const token = cookieStore.get('token')?.value;
   const session = verifyToken(token || '');
@@ -77,7 +74,7 @@ export async function DELETE(_request: Request, { params }: RouteContext) {
 
     await prisma.client.delete({ where: { id: clientId } });
     
-    revalidatePath('/dashboard/clientes');
+    revalidatePath('/dashboard/clients'); // Corrigido para o caminho correto
 
     return NextResponse.json({ message: 'Cliente excluído com sucesso.' }, { status: 200 });
   } catch (error) {

@@ -4,6 +4,27 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import prisma from '@/lib/prisma';
 import { verifyToken } from '@/lib/session';
+// A importação do 'Prisma' foi removida.
+
+// A função de busca de dados
+async function getUsers() {
+  const users = await prisma.user.findMany({
+    orderBy: {
+      createdAt: 'desc',
+    },
+    include: {
+      business: {
+        select: {
+          name: true,
+        },
+      },
+    },
+  });
+  return users;
+}
+
+// 1. Usamos 'Awaited' e 'ReturnType' do TypeScript para extrair o tipo
+type UserWithBusiness = Awaited<ReturnType<typeof getUsers>>[0];
 
 // Função para LISTAR todos os usuários na plataforma (Apenas para ADMIN)
 export async function GET() {
@@ -16,21 +37,10 @@ export async function GET() {
   }
 
   try {
-    const users = await prisma.user.findMany({
-      orderBy: {
-        createdAt: 'desc',
-      },
-      include: {
-        business: {
-          select: {
-            name: true,
-          },
-        },
-      },
-    });
+    const users = await getUsers();
     
-    // CORREÇÃO: Mapeia para um novo objeto explicitamente, sem o campo 'password'
-    const usersToReturn = users.map(user => ({
+    // Mapeia para um novo objeto explicitamente, sem o campo 'password'
+    const usersToReturn = users.map((user: UserWithBusiness) => ({ // 2. O tipo agora está correto
         id: user.id,
         name: user.name,
         email: user.email,

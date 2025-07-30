@@ -6,12 +6,12 @@ import prisma from '@/lib/prisma';
 import { verifyToken } from '@/lib/session';
 import { revalidatePath } from 'next/cache';
 
-// Função PUT (ATUALIZAR) atualizada
+// Função PUT (ATUALIZAR) corrigida
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } } // ASSINATURA CORRIGIDA
 ) {
-  const planId = params.id;
+  const { id: planId } = context.params; // ID pego do 'context'
   const cookieStore = await cookies();
   const token = cookieStore.get('token')?.value;
   const session = verifyToken(token || '');
@@ -22,7 +22,6 @@ export async function PUT(
 
   try {
     const body = await request.json();
-    // 1. Extrair o novo campo 'permissions' do corpo da requisição
     const { name, description, price, features, permissions, active } = body;
 
     if (!name || price === undefined) {
@@ -36,7 +35,7 @@ export async function PUT(
         description,
         price,
         features,
-        permissions, // 2. Adicionar 'permissions' aos dados a serem salvos
+        permissions,
         active,
       },
     });
@@ -51,12 +50,12 @@ export async function PUT(
   }
 }
 
-// A função DELETE não precisa de alterações
+// Função DELETE corrigida
 export async function DELETE(
-  _request: Request,
-  { params }: { params: { id: string } }
+  request: Request, // O primeiro parâmetro é necessário
+  context: { params: { id: string } } // ASSINATURA CORRIGIDA
 ) {
-  const planId = params.id;
+  const { id: planId } = context.params; // ID pego do 'context'
   const cookieStore = await cookies();
   const token = cookieStore.get('token')?.value;
   const session = verifyToken(token || '');
