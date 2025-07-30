@@ -4,7 +4,7 @@
 const nextConfig = {
   devIndicators: {
     // Adicionamos o subdomínio à lista
-    allowedDevOrigins: ["lvh.me", "negocioteste1.lvh.me"],
+    allowedDevOrigins: ["tracke-me.vercel.app", "lvh.me", "negocioteste1.lvh.me"],
   },
 };
 
