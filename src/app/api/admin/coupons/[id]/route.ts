@@ -50,7 +50,7 @@ export async function PUT(
 
 // Função para EXCLUIR um cupão
 export async function DELETE(
-  request: Request, // O primeiro parâmetro é necessário, mesmo que não usado
+  request: Request, // O primeiro parâmetro é necessário
   context: { params: { id: string } } // ASSINATURA CORRIGIDA
 ) {
   const { id: couponId } = context.params; // ID pego do 'context'
