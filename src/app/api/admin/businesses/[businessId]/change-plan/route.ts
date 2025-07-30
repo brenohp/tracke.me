@@ -6,7 +6,7 @@ import prisma from '@/lib/prisma';
 import { verifyToken } from '@/lib/session';
 import { revalidatePath } from 'next/cache';
 
-// A função agora recebe apenas 'request' s
+// A função agora recebe apenas 'request'
 export async function PUT(request: Request) {
   const cookieStore = await cookies();
   const token = cookieStore.get('token')?.value;
