@@ -6,20 +6,24 @@ import prisma from '@/lib/prisma';
 import { verifyToken } from '@/lib/session';
 import { revalidatePath } from 'next/cache';
 
-// ASSINATURA DA FUNÇÃO CORRIGIDA
-export async function PUT(
-  request: Request,
-  context: { params: { businessId: string } }
-) {
-  // O ID é pego de dentro do 'context.params'
-  const { businessId } = context.params;
-  
+// A função agora recebe apenas 'request'
+export async function PUT(request: Request) {
   const cookieStore = await cookies();
   const token = cookieStore.get('token')?.value;
   const session = verifyToken(token || '');
 
   if (!session || session.role !== 'ADMIN') {
     return NextResponse.json({ message: 'Acesso negado.' }, { status: 403 });
+  }
+
+  // Extraindo o businessId manualmente da URL da requisição
+  const url = new URL(request.url);
+  const pathnameParts = url.pathname.split('/');
+  // Pega a parte da URL que vem depois de '/businesses/'
+  const businessId = pathnameParts[pathnameParts.indexOf('businesses') + 1];
+
+  if (!businessId) {
+    return NextResponse.json({ message: 'ID do negócio não encontrado na URL.' }, { status: 400 });
   }
 
   try {
