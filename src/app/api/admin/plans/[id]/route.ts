@@ -6,12 +6,13 @@ import prisma from '@/lib/prisma';
 import { verifyToken } from '@/lib/session';
 import { revalidatePath } from 'next/cache';
 
-// Função PUT (ATUALIZAR) corrigida
-export async function PUT(
-  request: Request,
-  context: { params: { id: string } } // ASSINATURA CORRIGIDA
-) {
-  const { id: planId } = context.params; // ID pego do 'context'
+// Função PUT (ATUALIZAR) com a nova lógica
+export async function PUT(request: Request) {
+  // Extrai o ID manualmente da URL
+  const url = new URL(request.url);
+  const pathnameParts = url.pathname.split('/');
+  const planId = pathnameParts[pathnameParts.indexOf('plans') + 1];
+
   const cookieStore = await cookies();
   const token = cookieStore.get('token')?.value;
   const session = verifyToken(token || '');
@@ -50,12 +51,13 @@ export async function PUT(
   }
 }
 
-// Função DELETE corrigida
-export async function DELETE(
-  request: Request, // O primeiro parâmetro é necessário
-  context: { params: { id: string } } // ASSINATURA CORRIGIDA
-) {
-  const { id: planId } = context.params; // ID pego do 'context'
+// Função DELETE com a nova lógica
+export async function DELETE(request: Request) {
+  // Extrai o ID manualmente da URL
+  const url = new URL(request.url);
+  const pathnameParts = url.pathname.split('/');
+  const planId = pathnameParts[pathnameParts.indexOf('plans') + 1];
+
   const cookieStore = await cookies();
   const token = cookieStore.get('token')?.value;
   const session = verifyToken(token || '');
