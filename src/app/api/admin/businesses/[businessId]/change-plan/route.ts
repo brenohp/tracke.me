@@ -6,16 +6,18 @@ import prisma from '@/lib/prisma';
 import { verifyToken } from '@/lib/session';
 import { revalidatePath } from 'next/cache';
 
+// ASSINATURA DA FUNÇÃO CORRIGIDA
 export async function PUT(
   request: Request,
-  { params }: { params: { businessId: string } }
+  context: { params: { businessId: string } }
 ) {
-  const businessId = params.businessId;
+  // O ID é pego de dentro do 'context.params'
+  const { businessId } = context.params;
+  
   const cookieStore = await cookies();
   const token = cookieStore.get('token')?.value;
   const session = verifyToken(token || '');
 
-  // 1. Segurança: Apenas admins podem realizar esta ação
   if (!session || session.role !== 'ADMIN') {
     return NextResponse.json({ message: 'Acesso negado.' }, { status: 403 });
   }
@@ -27,7 +29,6 @@ export async function PUT(
       return NextResponse.json({ message: 'O ID do novo plano é obrigatório.' }, { status: 400 });
     }
 
-    // 2. Atualiza o negócio no banco de dados com o novo planId
     await prisma.business.update({
       where: { id: businessId },
       data: {
@@ -35,7 +36,6 @@ export async function PUT(
       },
     });
 
-    // 3. Limpa o cache da página de negócios para que a alteração apareça imediatamente
     revalidatePath('/admin/businesses');
 
     return NextResponse.json({ message: 'Plano do negócio atualizado com sucesso.' }, { status: 200 });
