@@ -7,7 +7,7 @@ import { Prisma, Appointment } from '@prisma/client';
 import { verifyToken } from '@/lib/session';
 import { revalidatePath } from 'next/cache';
 import { addMinutes } from 'date-fns';
-import * as dateFnsTz from 'date-fns-tz';
+// REMOVIDO: qualquer importação de date-fns-tz
 import { NotificationService } from '@/lib/services/notification.service';
 
 type AppointmentWithIncludes = Appointment & {
@@ -38,11 +38,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: 'Serviço não encontrado.' }, { status: 404 });
     }
 
-    const timeZone = 'America/Sao_Paulo'; 
+    // --- INÍCIO DA CORREÇÃO FINAL DE FUSO HORÁRIO ---
+    // Cria uma string de data completa com o fuso horário do Brasil (-03:00)
+    const localDateTimeString = `${startTime}:00.000-03:00`;
+    // Cria o objeto Date a partir da string completa. O JavaScript/Node.js fará a conversão para UTC corretamente.
+    const startTimeDate = new Date(localDateTimeString);
+    // --- FIM DA CORREÇÃO ---
     
-    // @ts-expect-error - Usando a diretiva recomendada pelo ESLint.
-    const startTimeDate = dateFnsTz.zonedTimeToUtc(startTime, timeZone);
-
     const endTimeDate = addMinutes(startTimeDate, service.durationInMinutes);
 
     const newAppointment = await prisma.appointment.create({
