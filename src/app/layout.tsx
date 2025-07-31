@@ -8,7 +8,7 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Tracke.me",
+  title: "CliendaApp - Gestão Inteligente",
   description: "Simplificando a gestão do seu negócio.",
 };
 
