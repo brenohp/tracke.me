@@ -7,7 +7,7 @@ import { Prisma, Appointment } from '@prisma/client';
 import { verifyToken } from '@/lib/session';
 import { revalidatePath } from 'next/cache';
 import { addMinutes } from 'date-fns';
-import * as dateFnsTz from 'date-fns-tz';
+import { fromZonedTime } from 'date-fns-tz'; // <<< IMPORTAÇÃO CORRIGIDA
 import { NotificationService } from '@/lib/services/notification.service';
 
 type AppointmentWithIncludes = Appointment & {
@@ -46,10 +46,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: 'Serviço não encontrado.' }, { status: 404 });
     }
 
-    const timeZone = business.timezone;
+    const timeZone = business.timezone; 
     
-    // @ts-expect-error - Ignora o erro de tipo, pois sabemos que a função existe em runtime.
-    const startTimeDate = dateFnsTz.zonedTimeToUtc(startTime, timeZone);
+    // <<< USO DA FUNÇÃO CORRIGIDA
+    const startTimeDate = fromZonedTime(startTime, timeZone); 
 
     const endTimeDate = addMinutes(startTimeDate, service.durationInMinutes);
 
