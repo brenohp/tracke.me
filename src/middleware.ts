@@ -8,30 +8,32 @@ export const config = {
 export function middleware(req: NextRequest) {
   const url = req.nextUrl.clone();
   const hostname = req.headers.get('host')!;
-  const appDomain = process.env.NEXT_PUBLIC_APP_DOMAIN; // Removi o valor reserva para um debug mais limpo
-
-  // --- LOGS PARA DEPURAÇÃO EM TEMPO REAL ---
-  console.log('--- Middleware Executado ---');
-  console.log('Hostname da Requisição:', hostname);
-  console.log('APP_DOMAIN (da Vercel):', appDomain);
-  console.log('A comparação (hostname === appDomain) resulta em:', hostname === appDomain);
-  console.log('---------------------------');
-
+  
+  // Usamos a variável de ambiente, com um fallback para desenvolvimento local
+  const appDomain = process.env.NEXT_PUBLIC_APP_DOMAIN || 'lvh.me:3000';
   const protocol = req.nextUrl.protocol;
 
+  // Se o acesso for para o /admin, ele deve SEMPRE estar no domínio principal.
   if (url.pathname.startsWith('/admin')) {
-    if (hostname === appDomain) {
-      return NextResponse.next();
+    // Se o hostname atual NÃO for o domínio principal, redireciona para lá.
+    if (hostname !== appDomain) {
+      const adminUrl = new URL(url.pathname, `${protocol}//${appDomain}`);
+      return NextResponse.redirect(adminUrl);
     }
-    const adminUrl = new URL('/admin', `${protocol}//${appDomain}`);
-    return NextResponse.redirect(adminUrl);
+    // Se já estiver no domínio principal, permite continuar.
+    return NextResponse.next();
   }
 
-  if (hostname !== appDomain) {
-    const subdomain = hostname.replace(`.${appDomain}`, '');
-    url.pathname = `/${subdomain}${url.pathname}`;
-    return NextResponse.rewrite(url);
+  // --- LÓGICA CORRIGIDA PARA TRATAR WWW ---
+  // Verifica se o hostname é o domínio raiz OU o domínio www.
+  // Se for um deles, trata como o site principal e permite o acesso.
+  if (hostname === appDomain || hostname === `www.${appDomain}`) {
+    return NextResponse.next();
   }
-  
-  return NextResponse.next();
+
+  // Se não for o domínio principal nem o www, é um subdomínio de cliente.
+  // Reescreve a URL para o formato de rota dinâmica.
+  const subdomain = hostname.replace(`.${appDomain}`, '');
+  url.pathname = `/${subdomain}${url.pathname}`;
+  return NextResponse.rewrite(url);
 }
