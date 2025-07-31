@@ -84,7 +84,7 @@ export default async function LandingPage() {
                 <h2 className="text-3xl md:text-4xl font-bold">Tem alguma dúvida?</h2>
                 <p className="mt-4 text-lg text-gray-600 max-w-2xl mx-auto">A nossa equipe está pronta para ajudar a encontrar o plano perfeito e a alavancar o seu negócio. Entre em contato!</p>
                 <div className="mt-10 flex flex-col sm:flex-row justify-center items-center gap-8">
-                    <a href="mailto:contato@CliendaApp" className="flex items-center gap-3 text-lg text-gray-700 hover:text-brand-accent"><Mail className="h-6 w-6"/><span className="font-semibold">contato@CliendaApp</span></a>
+                    <a href="mailto:contato@clienda.app" className="flex items-center gap-3 text-lg text-gray-700 hover:text-brand-accent"><Mail className="h-6 w-6"/><span className="font-semibold">contato@CliendaApp</span></a>
                     <a href="https://wa.me/5516999999999" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 text-lg text-gray-700 hover:text-brand-accent"><Phone className="h-6 w-6"/><span className="font-semibold">+55 (16) 99999-9999</span></a>
                 </div>
             </div>

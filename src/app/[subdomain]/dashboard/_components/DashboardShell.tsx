@@ -32,7 +32,7 @@ export function DashboardShell({ children, permissions }: { children: ReactNode,
         >
           <div className={`flex items-center p-4 h-16 border-b border-white/10 ${isSidebarOpen ? 'justify-between' : 'justify-center'}`}>
             <Link href="/dashboard" className={`text-2xl font-semibold text-white transition-opacity duration-200 ${!isSidebarOpen && 'hidden'}`}>
-              Tracke.me
+              CliendaApp
             </Link>
             <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="text-gray-300 hover:text-white hidden md:block">
               {isSidebarOpen ? <PanelLeftClose size={24} /> : <PanelRightClose size={24} />}
