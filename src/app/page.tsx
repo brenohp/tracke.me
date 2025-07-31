@@ -38,7 +38,7 @@ export default async function LandingPage() {
         <section className="pt-32 pb-24 text-center">
           <div className="container mx-auto px-6">
             <h1 className="text-4xl md:text-6xl font-extrabold leading-tight tracking-tighter">A gestão da sua agenda,<br /><span className="text-brand-accent">finalmente no automático.</span></h1>
-            <p className="mt-6 text-lg text-gray-600 max-w-2xl mx-auto">O Tracke.me usa Inteligência Artificial para que os seus clientes agendem horários pelo WhatsApp, enquanto você organiza tudo num só lugar. Simples, rápido e profissional.</p>
+            <p className="mt-6 text-lg text-gray-600 max-w-2xl mx-auto">O CliendaApp usa Inteligência Artificial para que os seus clientes agendem horários pelo WhatsApp, enquanto você organiza tudo num só lugar. Simples, rápido e profissional.</p>
             <div className="mt-10 flex flex-col sm:flex-row justify-center items-center gap-4">
               <Link href="#pricing" className="w-full sm:w-auto bg-brand-accent text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-opacity-90 transition-transform hover:scale-105">Ver Planos e Preços</Link>
             </div>
@@ -73,7 +73,7 @@ export default async function LandingPage() {
               <Star className="h-10 w-10 text-brand-accent mx-auto mb-4" /><h2 className="text-3xl font-bold text-brand-primary">Leve sua gestão para o próximo nível</h2>
               <p className="mt-4 text-lg text-gray-700 max-w-3xl mx-auto">Gosta do nosso serviço e nossa interface e deseja funcionalidades e serviços <span className="font-semibold text-brand-primary">personalizadas premium</span>? Entre em contato com nossa equipe!</p>
               <div className="mt-8">
-                  <Link href="mailto:premium@tracke.me?subject=Contato%20para%20Serviços%20Premium" className="bg-brand-primary text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-opacity-90 transition-transform hover:scale-105">Solicitar Orçamento Premium</Link>
+                  <Link href="mailto:premium@CliendaApp?subject=Contato%20para%20Serviços%20Premium" className="bg-brand-primary text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-opacity-90 transition-transform hover:scale-105">Solicitar Orçamento Premium</Link>
               </div>
           </div>
         </section>
@@ -84,7 +84,7 @@ export default async function LandingPage() {
                 <h2 className="text-3xl md:text-4xl font-bold">Tem alguma dúvida?</h2>
                 <p className="mt-4 text-lg text-gray-600 max-w-2xl mx-auto">A nossa equipe está pronta para ajudar a encontrar o plano perfeito e a alavancar o seu negócio. Entre em contato!</p>
                 <div className="mt-10 flex flex-col sm:flex-row justify-center items-center gap-8">
-                    <a href="mailto:contato@tracke.me" className="flex items-center gap-3 text-lg text-gray-700 hover:text-brand-accent"><Mail className="h-6 w-6"/><span className="font-semibold">contato@tracke.me</span></a>
+                    <a href="mailto:contato@CliendaApp" className="flex items-center gap-3 text-lg text-gray-700 hover:text-brand-accent"><Mail className="h-6 w-6"/><span className="font-semibold">contato@CliendaApp</span></a>
                     <a href="https://wa.me/5516999999999" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 text-lg text-gray-700 hover:text-brand-accent"><Phone className="h-6 w-6"/><span className="font-semibold">+55 (16) 99999-9999</span></a>
                 </div>
             </div>
@@ -94,7 +94,7 @@ export default async function LandingPage() {
       {/* Rodapé */}
       <footer className="bg-white border-t">
         <div className="container mx-auto px-6 py-8 text-center text-gray-500">
-          <p>&copy; {new Date().getFullYear()} Tracke.me. Todos os direitos reservados.</p>
+          <p>&copy; {new Date().getFullYear()} CliendaApp. Todos os direitos reservados.</p>
         </div>
       </footer>
     </div>
