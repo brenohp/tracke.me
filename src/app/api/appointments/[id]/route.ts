@@ -5,15 +5,15 @@ import { cookies } from 'next/headers';
 import prisma from '@/lib/prisma';
 import { verifyToken } from '@/lib/session';
 import { revalidatePath } from 'next/cache';
-import { addMinutes } from 'date-fns'; // Removido parseISO
+import { addMinutes } from 'date-fns';
 import { NotificationService } from '@/lib/services/notification.service';
 
 // Função para ATUALIZAR (EDITAR) um agendamento
-export async function PUT(
-  request: Request,
-  { params }: { params: { id: string } } // Recebe o ID pelos parâmetros da rota
-) {
-  const appointmentId = params.id; // Pega o ID de forma mais segura
+export async function PUT(request: Request) {
+  // Extrai o ID manualmente da URL, conforme solicitado
+  const url = new URL(request.url);
+  const pathnameParts = url.pathname.split('/');
+  const appointmentId = pathnameParts[pathnameParts.indexOf('appointments') + 1];
 
   const cookieStore = await cookies();
   const token = cookieStore.get('token')?.value;
@@ -47,10 +47,9 @@ export async function PUT(
       return NextResponse.json({ message: 'Serviço selecionado não é válido.' }, { status: 400 });
     }
     
-    // --- INÍCIO DA CORREÇÃO DE FUSO HORÁRIO ---
+    // Mantém a correção de fuso horário
     const localDateTimeStringWithOffset = `${startTime}-03:00`;
     const startTimeDate = new Date(localDateTimeStringWithOffset);
-    // --- FIM DA CORREÇÃO ---
     
     const endTimeDate = addMinutes(startTimeDate, service.durationInMinutes);
 
@@ -91,11 +90,11 @@ export async function PUT(
 }
 
 // Função para EXCLUIR um agendamento
-export async function DELETE(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
-  const appointmentId = params.id; // Pega o ID de forma mais segura
+export async function DELETE(request: Request) {
+  // Extrai o ID manualmente da URL, conforme solicitado
+  const url = new URL(request.url);
+  const pathnameParts = url.pathname.split('/');
+  const appointmentId = pathnameParts[pathnameParts.indexOf('appointments') + 1];
 
   const cookieStore = await cookies();
   const token = cookieStore.get('token')?.value;
