@@ -52,7 +52,7 @@ export default function LoginPage() {
     <div className="flex items-center justify-center min-h-screen py-12 bg-brand-background">
       <div className="w-full max-w-md p-8 space-y-4 bg-white rounded-lg shadow-md">
         <h1 className="text-3xl font-bold text-center text-brand-primary">
-          Tracke.me
+          CliendaApp
         </h1>
         <h2 className="text-lg text-center text-brand-accent">
           Acesse sua conta
