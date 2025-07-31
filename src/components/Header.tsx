@@ -12,7 +12,7 @@ export default function Header() {
     <header className="bg-white/80 backdrop-blur-md fixed top-0 left-0 right-0 z-40 shadow-sm">
       <div className="container mx-auto px-6 py-4 flex justify-between items-center">
         <Link href="/" className="text-2xl font-bold text-brand-primary">
-          Tracke.me
+          CliendaApp
         </Link>
 
         {/* Menu Desktop */}

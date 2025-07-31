@@ -22,7 +22,7 @@ export default async function AdminDashboardPage() {
       <header className="mb-8">
         <h2 className="text-2xl font-semibold text-gray-800">Visão Geral da Plataforma</h2>
         <p className="mt-1 text-gray-600">
-          Acompanhe o crescimento e a atividade do Tracke.me.
+          Acompanhe o crescimento e a atividade do CliendaApp.
         </p>
       </header>
 
