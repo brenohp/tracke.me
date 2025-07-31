@@ -3,7 +3,7 @@
 
 import { useState, useEffect, type FormEvent } from 'react';
 import { toast } from 'react-hot-toast';
-import { useRouter, usePathname } from 'next/navigation';
+// Removido: import { useRouter, usePathname } from 'next/navigation';
 
 // Tipos
 interface SelectOption {
@@ -27,7 +27,7 @@ interface AppointmentFormProps {
   initialData?: AppointmentData | null;
   initialStartTime?: string; 
   onSuccess?: () => void;
-  onDelete?: () => void; // Nova prop para acionar a exclusão
+  onDelete?: () => void;
 }
 
 export default function AppointmentForm({ 
@@ -37,10 +37,10 @@ export default function AppointmentForm({
   initialData, 
   initialStartTime, 
   onSuccess,
-  onDelete // Recebe a nova prop
+  onDelete
 }: AppointmentFormProps) {
-  const router = useRouter();
-  const pathname = usePathname();
+  // Removido: const router = useRouter();
+  // Removido: const pathname = usePathname();
   
   const [clientId, setClientId] = useState('');
   const [serviceId, setServiceId] = useState('');
@@ -105,7 +105,6 @@ export default function AppointmentForm({
       toast.success(isEditing ? 'Agendamento atualizado!' : 'Agendamento criado!');
       
       if (!isEditing) resetForm();
-      router.push(pathname);
       if (onSuccess) onSuccess();
 
     } catch (error: unknown) {

@@ -6,18 +6,15 @@ import prisma from '@/lib/prisma';
 import { Prisma, Appointment } from '@prisma/client';
 import { verifyToken } from '@/lib/session';
 import { revalidatePath } from 'next/cache';
-import { addMinutes, parseISO } from 'date-fns';
+import { addMinutes } from 'date-fns'; // Removido parseISO que não é mais usado aqui
 import { NotificationService } from '@/lib/services/notification.service';
 
-// 1. CORREÇÃO: O tipo agora reflete a estrutura correta (name: string)
 type AppointmentWithIncludes = Appointment & {
   client: { name: string };
   service: { name: string };
   professional: { name: string };
 };
 
-
-// Função POST (inalterada)
 export async function POST(request: Request) {
   const cookieStore = await cookies();
   const token = cookieStore.get('token')?.value;
@@ -40,7 +37,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: 'Serviço não encontrado.' }, { status: 404 });
     }
 
-    const startTimeDate = parseISO(startTime);
+    // ALTERAÇÃO APLICADA AQUI para corrigir o fuso horário
+    const startTimeDate = new Date(startTime);
     const endTimeDate = addMinutes(startTimeDate, service.durationInMinutes);
 
     const newAppointment = await prisma.appointment.create({
@@ -80,7 +78,6 @@ export async function POST(request: Request) {
 }
 
 
-// Função GET (corrigida)
 export async function GET(request: NextRequest) {
   const cookieStore = await cookies();
   const token = cookieStore.get('token')?.value;
