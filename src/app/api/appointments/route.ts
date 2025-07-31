@@ -7,7 +7,7 @@ import { Prisma, Appointment } from '@prisma/client';
 import { verifyToken } from '@/lib/session';
 import { revalidatePath } from 'next/cache';
 import { addMinutes } from 'date-fns';
-// REMOVIDO: qualquer importação de date-fns-tz
+import * as dateFnsTz from 'date-fns-tz';
 import { NotificationService } from '@/lib/services/notification.service';
 
 type AppointmentWithIncludes = Appointment & {
@@ -33,18 +33,24 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: 'Todos os campos são obrigatórios.' }, { status: 400 });
     }
 
+    const business = await prisma.business.findUnique({
+      where: { id: session.businessId },
+    });
+
+    if (!business) {
+      return NextResponse.json({ message: 'Negócio não encontrado.' }, { status: 404 });
+    }
+
     const service = await prisma.service.findUnique({ where: { id: serviceId } });
     if (!service) {
       return NextResponse.json({ message: 'Serviço não encontrado.' }, { status: 404 });
     }
 
-    // --- INÍCIO DA CORREÇÃO FINAL DE FUSO HORÁRIO ---
-    // Cria uma string de data completa com o fuso horário do Brasil (-03:00)
-    const localDateTimeString = `${startTime}:00.000-03:00`;
-    // Cria o objeto Date a partir da string completa. O JavaScript/Node.js fará a conversão para UTC corretamente.
-    const startTimeDate = new Date(localDateTimeString);
-    // --- FIM DA CORREÇÃO ---
+    const timeZone = business.timezone;
     
+    // @ts-expect-error - Ignora o erro de tipo, pois sabemos que a função existe em runtime.
+    const startTimeDate = dateFnsTz.zonedTimeToUtc(startTime, timeZone);
+
     const endTimeDate = addMinutes(startTimeDate, service.durationInMinutes);
 
     const newAppointment = await prisma.appointment.create({

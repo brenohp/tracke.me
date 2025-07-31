@@ -1,4 +1,4 @@
-// schema.prisma - Versão com Notificações
+// schema.prisma - Versão com Notificações e Fuso Horário
 
 generator client {
   provider = "prisma-client-js"
@@ -11,11 +11,11 @@ datasource db {
 }
 
 model Business {
-  id                  String  @id @default(cuid())
-  name                String  @unique
+  id                  String    @id @default(cuid())
+  name                String    @unique
   phone               String?
-  status              String  @default("ACTIVE")
-  subdomain           String  @unique
+  status              String    @default("ACTIVE")
+  subdomain           String    @unique
   addressStreet       String?
   addressNumber       String?
   addressComplement   String?
@@ -24,37 +24,33 @@ model Business {
   addressState        String?
   addressZipCode      String?
   planId              String?
-  plan                Plan?   @relation(fields: [planId], references: [id])
+  plan                Plan?     @relation(fields: [planId], references: [id])
   
-  users     User[]
-  services  Service[]
-  clients   Client[]
+  timezone            String    @default("America/Sao_Paulo")
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  users               User[]
+  services            Service[]
+  clients             Client[]
+
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
 }
 
 model User {
-  id         String   @id @default(cuid())
-  name       String
-  email      String   @unique
-  password   String
-  role       Role     @default(OWNER)
-  businessId String
-  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-
-  services       Service[]      @relation("ProfessionalsOnServices")
+  id            String         @id @default(cuid())
+  name          String
+  email         String         @unique
+  password      String
+  role          Role           @default(OWNER)
+  businessId    String
+  business      Business       @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  services      Service[]      @relation("ProfessionalsOnServices")
   availabilities Availability[]
-  timeOffs       TimeOff[]
-  appointments   Appointment[]  @relation("ProfessionalAppointments")
-  
-  // ===================================
-  // RELAÇÃO ADICIONADA AQUI
-  // ===================================
-  notifications  Notification[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  timeOffs      TimeOff[]
+  appointments  Appointment[]  @relation("ProfessionalAppointments")
+  notifications Notification[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
 }
 
 model Service {
@@ -68,9 +64,8 @@ model Service {
   business          Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
   professionals     User[]        @relation("ProfessionalsOnServices")
   appointments      Appointment[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
 }
 
 model Client {
@@ -82,9 +77,8 @@ model Client {
   businessId   String
   business     Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
   appointments Appointment[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
 }
 
 model Appointment {
@@ -98,9 +92,8 @@ model Appointment {
   service        Service           @relation(fields: [serviceId], references: [id], onDelete: Cascade)
   professionalId String
   professional   User              @relation("ProfessionalAppointments", fields: [professionalId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
 }
 
 model Availability {
@@ -122,17 +115,16 @@ model TimeOff {
 }
 
 model Plan {
-  id          String   @id @default(cuid())
-  name        String   @unique
+  id          String     @id @default(cuid())
+  name        String     @unique
   description String?
-  price       Decimal  @db.Decimal(10, 2)
+  price       Decimal    @db.Decimal(10, 2)
   features    Json
-  active      Boolean  @default(true)
-  permissions Json     @default("{}")
+  active      Boolean    @default(true)
+  permissions Json       @default("{}")
   businesses  Business[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
 }
 
 model Coupon {
@@ -142,23 +134,18 @@ model Coupon {
   discountValue Decimal?
   expiresAt     DateTime?
   active        Boolean      @default(true)
-
-  createdAt DateTime @default(now())
+  createdAt     DateTime     @default(now())
 }
 
 model Notification {
-  id        String    @id @default(cuid())
+  id        String           @id @default(cuid())
   message   String
-  read      Boolean   @default(false)
+  read      Boolean          @default(false)
   url       String?
-  
-  // CAMPO 'TYPE' ADICIONADO
   type      NotificationType @default(GENERIC)
-
   userId    String
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime  @default(now())
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime         @default(now())
 }
 
 enum Role {
@@ -186,7 +173,6 @@ enum DiscountType {
   FREE_TRIAL
 }
 
-// NOVO ENUM PARA OS TIPOS DE NOTIFICAÇÃO
 enum NotificationType {
   GENERIC
   NEW_APPOINTMENT
