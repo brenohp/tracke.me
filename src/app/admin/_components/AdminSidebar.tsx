@@ -68,7 +68,7 @@ export function AdminSidebar() {
     <aside className="w-64 bg-gray-800 text-white flex flex-col">
       <div className="p-6 h-20 flex items-center border-b border-gray-700">
         <Link href="/admin" className="text-2xl font-semibold text-white">
-          Tracke.me <span className="text-sm font-normal text-brand-accent">Admin</span>
+          CliendaApp <span className="text-sm font-normal text-brand-accent">Admin</span>
         </Link>
       </div>
       <nav className="flex-1 p-4 space-y-2">
