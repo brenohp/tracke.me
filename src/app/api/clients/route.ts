@@ -10,7 +10,7 @@ export async function POST(request: Request) {
   // Lógica de autenticação corrigida para ler o cookie
   const cookieStore = await cookies();
   const token = cookieStore.get('token')?.value;
-  const session = verifyToken(token || '');
+  const session = await verifyToken(token || '');
 
   if (!session || !session.businessId) {
     return NextResponse.json({ message: 'Não autorizado.' }, { status: 401 });
@@ -50,7 +50,7 @@ export async function GET() {
   // Lógica de autenticação corrigida para ler o cookie
   const cookieStore = await cookies();
   const token = cookieStore.get('token')?.value;
-  const session = verifyToken(token || '');
+  const session = await verifyToken(token || '');
 
   if (!session || !session.businessId) {
     return NextResponse.json({ message: 'Não autorizado.' }, { status: 401 });

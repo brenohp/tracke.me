@@ -37,7 +37,7 @@ async function getBusinessData(businessId: string) {
 export default async function BusinessSettingsPage() {
   const cookieStore = await cookies();
   const token = cookieStore.get('token')?.value;
-  const session = verifyToken(token || '');
+  const session = await verifyToken(token || '');
 
   if (!session) {
     redirect('/login');

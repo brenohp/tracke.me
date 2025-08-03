@@ -4,7 +4,7 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { verifyToken } from '@/lib/session';
 import prisma from '@/lib/prisma';
-import ScheduleView from './_components/ScheduleView'; // Nome do componente em inglês
+import ScheduleView from './_components/ScheduleView';
 
 // Função para buscar todos os dados necessários para o agendamento
 async function getAppointmentData(businessId: string) {
@@ -30,10 +30,11 @@ async function getAppointmentData(businessId: string) {
   return { services, clients, professionals };
 }
 
-export default async function SchedulePage() { // Nome da página em inglês
+export default async function SchedulePage() {
   const cookieStore = await cookies();
   const token = cookieStore.get('token')?.value;
-  const session = verifyToken(token || '');
+  // --- CORREÇÃO: Adicionado 'await' ---
+  const session = await verifyToken(token || '');
 
   if (!session) {
     redirect('/login');

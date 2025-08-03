@@ -2,9 +2,8 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+import { SignJWT } from 'jose'; // 1. Importa de 'jose' em vez de 'jsonwebtoken'
 import { serialize } from 'cookie';
-import { UserSession } from '@/lib/session';
 
 export async function POST(request: Request) {
   try {
@@ -24,17 +23,20 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: 'Credenciais inválidas.' }, { status: 401 });
     }
 
-    const sessionData: UserSession = {
+    // --- 2. LÓGICA DE CRIAÇÃO DO TOKEN ATUALIZADA ---
+    const secretKey = new TextEncoder().encode(process.env.JWT_SECRET!);
+    const token = await new SignJWT({
       userId: user.id,
       businessId: user.businessId,
       email: user.email,
-      role: user.role as 'ADMIN' | 'OWNER' | 'EMPLOYEE',
-    };
+      role: user.role,
+    })
+      .setProtectedHeader({ alg: 'HS256' })
+      .setIssuedAt()
+      .setExpirationTime('7d')
+      .sign(secretKey);
+    // --- FIM DA ATUALIZAÇÃO ---
 
-    const token = jwt.sign(sessionData, process.env.JWT_SECRET!, { expiresIn: '7d' });
-
-    // --- INÍCIO DA CORREÇÃO ---
-    // Remove a porta do domínio para o cookie
     const appDomain = (process.env.NEXT_PUBLIC_APP_DOMAIN || 'lvh.me:3000').split(':')[0];
     const domain = process.env.NODE_ENV === 'production' ? `.${appDomain}` : appDomain;
 
@@ -42,15 +44,15 @@ export async function POST(request: Request) {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      maxAge: 60 * 60 * 24 * 7,
+      maxAge: 60 * 60 * 24 * 7, // 7 dias
       path: '/',
-      domain: domain, // <-- Agora está correto: 'lvh.me'
+      domain: domain,
     });
-    // --- FIM DA CORREÇÃO ---
     
     const response = NextResponse.json({
       message: 'Login bem-sucedido!',
       subdomain: user.business.subdomain,
+      role: user.role,
     }, { status: 200 });
     
     response.headers.set('Set-Cookie', serializedCookie);

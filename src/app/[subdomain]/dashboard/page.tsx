@@ -4,12 +4,13 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { verifyToken } from '@/lib/session';
 import prisma from '@/lib/prisma';
-import DashboardClientView from './_components/DashboardClientView'; // 1. Importa o novo componente
+import DashboardClientView from './_components/DashboardClientView';
 
 export default async function DashboardPage() {
   const cookieStore = await cookies();
   const token = cookieStore.get('token')?.value;
-  const session = verifyToken(token || '');
+  // --- CORREÇÃO: Adicionado 'await' ---
+  const session = await verifyToken(token || '');
 
   if (!session) {
     redirect('/login');
@@ -30,7 +31,7 @@ export default async function DashboardPage() {
         Aqui está um resumo do seu negócio.
       </p>
 
-      {/* 2. Renderiza o componente de cliente que contém toda a lógica interativa */}
+      {/* Renderiza o componente de cliente que contém toda a lógica interativa */}
       <div className="mt-8">
         <DashboardClientView />
       </div>

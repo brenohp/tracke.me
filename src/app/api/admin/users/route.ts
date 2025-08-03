@@ -30,7 +30,7 @@ type UserWithBusiness = Awaited<ReturnType<typeof getUsers>>[0];
 export async function GET() {
   const cookieStore = await cookies();
   const token = cookieStore.get('token')?.value;
-  const session = verifyToken(token || '');
+  const session = await verifyToken(token || '');
 
   if (!session || session.role !== 'ADMIN') {
     return NextResponse.json({ message: 'Acesso negado.' }, { status: 403 });

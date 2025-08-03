@@ -13,7 +13,7 @@ export async function DELETE(request: Request) {
   // 3. Usa a autenticação via httpOnly cookie, nosso padrão de segurança
   const cookieStore = await cookies();
   const token = cookieStore.get('token')?.value;
-  const session = verifyToken(token || '');
+  const session = await verifyToken(token || '');
 
   if (!session) {
     return NextResponse.json({ message: 'Não autorizado.' }, { status: 401 });

@@ -15,7 +15,7 @@ export async function PUT(request: Request) {
 
   const cookieStore = await cookies();
   const token = cookieStore.get('token')?.value;
-  const session = verifyToken(token || '');
+  const session = await verifyToken(token || '');
 
   if (!session || !session.businessId) {
     return NextResponse.json({ message: 'Não autorizado.' }, { status: 401 });
@@ -91,7 +91,7 @@ export async function DELETE(request: Request) {
 
   const cookieStore = await cookies();
   const token = cookieStore.get('token')?.value;
-  const session = verifyToken(token || '');
+  const session = await verifyToken(token || '');
 
   if (!session || !session.businessId) {
     return NextResponse.json({ message: 'Não autorizado.' }, { status: 401 });

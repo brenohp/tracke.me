@@ -8,7 +8,7 @@ import prisma from '@/lib/prisma';
 export async function POST() {
   const cookieStore = await cookies();
   const token = cookieStore.get('token')?.value;
-  const session = verifyToken(token || '');
+  const session = await verifyToken(token || '');
 
   if (!session) {
     return NextResponse.json({ message: 'Não autorizado.' }, { status: 401 });

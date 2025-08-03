@@ -29,7 +29,8 @@ async function getClientsData(businessId: string) {
 export default async function ClientsPage() {
   const cookieStore = await cookies();
   const token = cookieStore.get('token')?.value;
-  const session = verifyToken(token || '');
+  // --- CORREÇÃO: Adicionado 'await' ---
+  const session = await verifyToken(token || '');
 
   if (!session) {
     redirect('/login');

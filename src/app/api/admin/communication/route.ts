@@ -8,7 +8,7 @@ import { NotificationService } from '@/lib/services/notification.service';
 export async function POST(request: Request) {
   const cookieStore = await cookies();
   const token = cookieStore.get('token')?.value;
-  const session = verifyToken(token || '');
+  const session = await verifyToken(token || '');
 
   // Segurança: Apenas admins podem usar este endpoint
   if (!session || session.role !== 'ADMIN') {

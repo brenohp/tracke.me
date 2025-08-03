@@ -19,7 +19,7 @@ type AppointmentWithIncludes = Appointment & {
 export async function POST(request: Request) {
   const cookieStore = await cookies();
   const token = cookieStore.get('token')?.value;
-  const session = verifyToken(token || '');
+  const session = await verifyToken(token || '');
 
   if (!session || !session.businessId) {
     return NextResponse.json({ message: 'Não autorizado.' }, { status: 401 });
@@ -93,7 +93,7 @@ export async function POST(request: Request) {
 export async function GET(request: NextRequest) {
     const cookieStore = await cookies();
     const token = cookieStore.get('token')?.value;
-    const session = verifyToken(token || '');
+    const session = await verifyToken(token || '');
 
     if (!session || !session.businessId) {
         return NextResponse.json({ message: 'Não autorizado.' }, { status: 401 });

@@ -10,7 +10,7 @@ export async function GET() {
   // 1. Autenticação e Autorização
   const cookieStore = await cookies();
   const token = cookieStore.get('token')?.value;
-  const session = verifyToken(token || '');
+  const session = await verifyToken(token || '');
 
   // Garante que apenas um ADMIN pode aceder a esta rota
   if (!session || session.role !== 'ADMIN') {

@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { verifyToken } from '@/lib/session';
 import prisma from '@/lib/prisma';
-import AvailabilityView from './_components/AvailabilityView'; // Vamos criar este ficheiro a seguir
+import AvailabilityView from './_components/AvailabilityView';
 
 // Função para buscar a disponibilidade atual do usuário logado
 async function getAvailabilityData(userId: string) {
@@ -21,7 +21,8 @@ async function getAvailabilityData(userId: string) {
 export default async function AvailabilityPage() {
   const cookieStore = await cookies();
   const token = cookieStore.get('token')?.value;
-  const session = verifyToken(token || '');
+  // --- CORREÇÃO: Adicionado 'await' ---
+  const session = await verifyToken(token || '');
 
   if (!session) {
     redirect('/login');

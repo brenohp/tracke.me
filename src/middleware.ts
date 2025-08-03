@@ -7,26 +7,28 @@ export const config = {
   matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
 };
 
-export function middleware(req: NextRequest) {
+// 1. A função agora é 'async'
+export async function middleware(req: NextRequest) {
   const url = req.nextUrl.clone();
   const hostname = req.headers.get('host')!;
   
-  const appDomain = process.env.NEXT_PUBLIC_APP_DOMAIN || 'lvh.me:3000'; // Será 'tracke.me'
+  const appDomain = process.env.NEXT_PUBLIC_APP_DOMAIN || 'lvh.me:3000';
   const protocol = req.nextUrl.protocol;
 
   const token = req.cookies.get('token')?.value;
-  const session = verifyToken(token || '');
+  // 2. Adicionamos 'await' para esperar a verificação do token
+  const session = await verifyToken(token || '');
 
   // Lógica de proteção para a rota /admin
   if (url.pathname.startsWith('/admin')) {
     // Se não houver sessão ou a função não for ADMIN, redireciona para o login
     if (!session || session.role !== 'ADMIN') {
-      const loginUrl = new URL('/login', `${protocol}//${hostname}`); // Redireciona para o login no mesmo host
+      const loginUrl = new URL('/login', `${protocol}//${hostname}`);
       loginUrl.searchParams.set('error', 'unauthorized');
       return NextResponse.redirect(loginUrl);
     }
     
-    // Se for admin, permite o acesso. O redirecionamento de domínio já é feito pela Vercel.
+    // Se for admin, permite o acesso.
     return NextResponse.next();
   }
 

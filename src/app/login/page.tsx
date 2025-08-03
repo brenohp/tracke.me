@@ -28,13 +28,21 @@ export default function LoginPage() {
 
       const data = await response.json();
 
-      if (response.ok && data.subdomain) {
+      if (response.ok && (data.subdomain || data.role === 'ADMIN')) {
         toast.success('Login bem-sucedido! Redirecionando...');
-        
-        // --- CORREÇÃO PARA lvh.me ---
+
         const appDomain = process.env.NEXT_PUBLIC_APP_DOMAIN || 'lvh.me:3000';
         const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
-        const redirectUrl = `${protocol}://${data.subdomain}.${appDomain}/dashboard`;
+        let redirectUrl = '';
+
+        // Verifica a função do usuário para decidir o redirecionamento
+        if (data.role === 'ADMIN') {
+          // Se for ADMIN, redireciona para o painel de administração no domínio principal
+          redirectUrl = `${protocol}://${appDomain}/admin`;
+        } else {
+          // Para outros usuários, redireciona para o subdomínio correspondente
+          redirectUrl = `${protocol}://${data.subdomain}.${appDomain}/dashboard`;
+        }
         
         window.location.href = redirectUrl;
         
@@ -42,6 +50,7 @@ export default function LoginPage() {
         toast.error(data.message || 'Falha no login.');
         setIsLoading(false);
       }
+
     } catch {
       toast.error('Ocorreu um erro ao conectar ao servidor.');
       setIsLoading(false);

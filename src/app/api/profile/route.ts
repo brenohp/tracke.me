@@ -11,7 +11,7 @@ import { revalidatePath } from 'next/cache';
 export async function GET() {
   const cookieStore = await cookies();
   const token = cookieStore.get('token')?.value;
-  const session = verifyToken(token || '');
+  const session = await verifyToken(token || '');
 
   if (!session) {
     return NextResponse.json({ message: 'Não autorizado.' }, { status: 401 });
@@ -41,7 +41,7 @@ export async function GET() {
 export async function PUT(request: Request) {
   const cookieStore = await cookies();
   const token = cookieStore.get('token')?.value;
-  const session = verifyToken(token || '');
+  const session = await verifyToken(token || '');
 
   if (!session) {
     return NextResponse.json({ message: 'Não autorizado.' }, { status: 401 });

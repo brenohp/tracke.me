@@ -11,7 +11,7 @@ import { revalidatePath } from 'next/cache';
 export async function GET() {
   const cookieStore = await cookies();
   const token = cookieStore.get('token')?.value;
-  const session = verifyToken(token || '');
+  const session = await verifyToken(token || '');
 
   if (!session || session.role !== 'ADMIN') {
     return NextResponse.json({ message: 'Acesso negado.' }, { status: 403 });
@@ -34,7 +34,7 @@ export async function GET() {
 export async function POST(request: Request) {
   const cookieStore = await cookies();
   const token = cookieStore.get('token')?.value;
-  const session = verifyToken(token || '');
+  const session = await verifyToken(token || '');
 
   if (!session || session.role !== 'ADMIN') {
     return NextResponse.json({ message: 'Acesso negado.' }, { status: 403 });

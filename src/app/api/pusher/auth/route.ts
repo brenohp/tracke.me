@@ -8,7 +8,7 @@ import { NextResponse } from 'next/server';
 export async function POST(request: Request) {
   const cookieStore = await cookies();
   const token = cookieStore.get('token')?.value;
-  const session = verifyToken(token || '');
+  const session = await verifyToken(token || '');
 
   // 1. Se não houver sessão, o usuário não pode se autenticar.
   if (!session) {

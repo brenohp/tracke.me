@@ -1,18 +1,29 @@
-// src/lib/session.ts
-import jwt from 'jsonwebtoken';
+// Caminho do arquivo: src/lib/session.ts
+import { jwtVerify, JWTPayload } from 'jose'; // Importamos JWTPayload para estender
 
-export interface UserSession {
+// Nossa interface agora estende a interface padrão do 'jose'
+export interface UserSession extends JWTPayload {
   userId: string;
-  businessId: string; // <-- CAMPO ADICIONADO
+  businessId: string;
   email: string;
   role: 'ADMIN' | 'OWNER' | 'EMPLOYEE';
 }
 
-export function verifyToken(token: string): UserSession | null {
+export async function verifyToken(token: string): Promise<UserSession | null> {
+  if (!token) {
+    return null;
+  }
+  
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as UserSession;
-    return decoded;
-  } catch {
+    const secretKey = new TextEncoder().encode(process.env.JWT_SECRET!);
+    
+    // AVISAMOS ao jwtVerify que esperamos um payload do tipo UserSession
+    const { payload } = await jwtVerify<UserSession>(token, secretKey);
+    
+    // Agora o 'payload' já tem o tipo correto, sem precisar de conversão forçada
+    return payload;
+  } catch (error) {
+    console.error("Falha na verificação do JWT com 'jose':", error);
     return null;
   }
 }

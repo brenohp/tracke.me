@@ -10,7 +10,7 @@ export async function GET() {
   // ... (código da função GET permanece o mesmo)
   const cookieStore = await cookies();
   const token = cookieStore.get('token')?.value;
-  const session = verifyToken(token || '');
+  const session = await verifyToken(token || '');
 
   if (!session) {
     return NextResponse.json({ message: 'Não autorizado.' }, { status: 401 });
@@ -38,7 +38,7 @@ export async function DELETE() {
   // ... (código da função DELETE permanece o mesmo)
   const cookieStore = await cookies();
   const token = cookieStore.get('token')?.value;
-  const session = verifyToken(token || '');
+  const session = await verifyToken(token || '');
 
   if (!session) {
     return NextResponse.json({ message: 'Não autorizado.' }, { status: 401 });

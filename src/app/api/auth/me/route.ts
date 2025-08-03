@@ -14,7 +14,7 @@ export async function GET() {
     return NextResponse.json({ message: 'Não autorizado' }, { status: 401 });
   }
 
-  const session = verifyToken(token) as UserSession | null;
+  const session = await verifyToken(token) as UserSession | null;
   if (!session) {
     return NextResponse.json({ message: 'Token inválido' }, { status: 401 });
   }

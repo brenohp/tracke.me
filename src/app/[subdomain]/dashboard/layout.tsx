@@ -5,9 +5,6 @@ import { verifyToken } from '@/lib/session';
 import { DashboardShell } from './_components/DashboardShell';
 import prisma from '@/lib/prisma';
 
-// ===================================================================
-// INTERFACE ATUALIZADA COM AS NOVAS PERMISSÕES
-// ===================================================================
 export interface PlanPermissions {
   hasPackages?: boolean;
   hasBilling?: boolean;
@@ -22,9 +19,12 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const cookieStore = await cookies();
+  // CORRETO: await é necessário para cookies()
+  const cookieStore = await cookies(); 
   const token = cookieStore.get('token')?.value;
-  const session = verifyToken(token || '');
+
+  // CORRETO: await é necessário para a nossa nova verifyToken()
+  const session = await verifyToken(token || '');
 
   if (!session) {
     redirect('/login');

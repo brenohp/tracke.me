@@ -10,7 +10,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: 'Não autorizado.' }, { status: 401 });
   }
   const token = authHeader.split(' ')[1];
-  const session = verifyToken(token);
+  const session = await verifyToken(token);
 
   if (!session) {
     return NextResponse.json({ message: 'Token inválido ou expirado.' }, { status: 401 });
@@ -46,7 +46,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ message: 'Não autorizado.' }, { status: 401 });
   }
   const token = authHeader.split(' ')[1];
-  const session = verifyToken(token);
+  const session = await verifyToken(token);
 
   if (!session) {
     return NextResponse.json({ message: 'Token inválido ou expirado.' }, { status: 401 });

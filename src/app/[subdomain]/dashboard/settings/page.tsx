@@ -19,7 +19,7 @@ async function getUserData(userId: string) {
 export default async function SettingsPage() { 
   const cookieStore = await cookies();
   const token = cookieStore.get('token')?.value;
-  const session = verifyToken(token || '');
+  const session = await verifyToken(token || '');
 
   if (!session) {
     redirect('/login');
