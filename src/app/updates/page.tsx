@@ -40,7 +40,7 @@ export default function UpdatesPage() {
       <main className="container mx-auto px-6 py-24 md:py-32">
         <div className="text-center max-w-3xl mx-auto">
           <h1 className="text-4xl md:text-5xl font-extrabold text-brand-primary">
-            O que há de novo no Tracke.me?
+            O que há de novo no CliendaApp?
           </h1>
           <p className="mt-4 text-lg text-gray-600">
             Estamos sempre trabalhando para melhorar sua experiência. Confira aqui as últimas novidades e melhorias da plataforma.
