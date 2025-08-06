@@ -5,7 +5,6 @@
 import { useState, useEffect, Suspense, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'react-hot-toast';
-// 1. Loader2 foi adicionado à importação
 import { Eye, EyeOff, Building, User, CreditCard, Check, X, Loader2 } from 'lucide-react';
 import { loadStripe } from '@stripe/stripe-js';
 
@@ -14,23 +13,17 @@ import { Input } from '@/components/ui/Input';
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
-interface Plan {
-  id: string;
-  name: string;
-  price: string;
-  description: string;
-  features: string;
-}
-interface AppliedCoupon {
-  code: string;
-  discountType: 'PERCENTAGE' | 'FIXED' | 'FREE_TRIAL';
-  discountValue: string | null;
-}
+// --- Tipagens ---
+interface Plan { id: string; name: string; price: string; description: string; features: string; }
+interface AppliedCoupon { code: string; discountType: 'PERCENTAGE' | 'FIXED' | 'FREE_TRIAL'; discountValue: string | null; }
+type PasswordCriterion = { text: string; isValid: boolean; regex: RegExp; };
 
+// --- Componente principal do formulário ---
 function CheckoutForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  // Estados do formulário de cadastro
   const [businessName, setBusinessName] = useState('');
   const [ownerName, setOwnerName] = useState('');
   const [email, setEmail] = useState('');
@@ -38,14 +31,36 @@ function CheckoutForm() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [subdomain, setSubdomain] = useState('');
   const [couponCode, setCouponCode] = useState('');
+  
+  // Estados de UI e de cupom
   const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
   const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Estado dos critérios de senha
+  const [passwordCriteria, setPasswordCriteria] = useState<PasswordCriterion[]>([
+    { text: 'Pelo menos 8 caracteres', isValid: false, regex: /.{8,}/ },
+    { text: 'Pelo menos uma letra', isValid: false, regex: /[a-zA-Z]/ },
+    { text: 'Pelo menos um número', isValid: false, regex: /\d/ },
+  ]);
+  
+  // Estados do plano
   const [plan, setPlan] = useState<Plan | null>(null);
   const [isLoadingPlan, setIsLoadingPlan] = useState(true);
 
+  // Valida a senha em tempo real
+  useEffect(() => {
+    setPasswordCriteria(prevCriteria =>
+      prevCriteria.map(criterion => ({
+        ...criterion,
+        isValid: criterion.regex.test(password),
+      }))
+    );
+  }, [password]);
+
+  // Busca os dados do plano ao carregar
   useEffect(() => {
     const planId = searchParams.get('planId');
     if (!planId) {
@@ -59,7 +74,7 @@ function CheckoutForm() {
         if (!response.ok) throw new Error('Plano não encontrado');
         const data = await response.json();
         setPlan(data);
-      } catch (error) { // 'error' agora é usado
+      } catch (error) {
         console.error("Falha ao buscar detalhes do plano:", error);
         toast.error('Não foi possível carregar os detalhes do plano.');
         router.push('/');
@@ -71,10 +86,7 @@ function CheckoutForm() {
   }, [searchParams, router]);
 
   const handleApplyCoupon = async () => {
-    if (!couponCode) {
-      toast.error('Por favor, insira um código de cupom.');
-      return;
-    }
+    if (!couponCode) return toast.error('Por favor, insira um código de cupom.');
     setIsApplyingCoupon(true);
     try {
       const response = await fetch('/api/coupons/validate', {
@@ -83,18 +95,12 @@ function CheckoutForm() {
         body: JSON.stringify({ couponCode }),
       });
       const data = await response.json();
-      if (!data.success) {
-        throw new Error(data.message);
-      }
+      if (!data.success) throw new Error(data.message);
       toast.success(`Cupom "${data.coupon.code}" aplicado!`);
       setAppliedCoupon(data.coupon);
     } catch (error: unknown) {
       setAppliedCoupon(null);
-      if (error instanceof Error) {
-        toast.error(error.message);
-      } else {
-        toast.error('Ocorreu um erro ao validar o cupom.');
-      }
+      toast.error(error instanceof Error ? error.message : 'Ocorreu um erro ao validar o cupom.');
     } finally {
       setIsApplyingCoupon(false);
     }
@@ -122,18 +128,19 @@ function CheckoutForm() {
     return basePrice;
   }, [plan, appliedCoupon]);
 
-  // 2. Função handleSubmit restaurada
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!plan) return;
-    setIsLoading(true);
-
+    
+    const isPasswordValid = passwordCriteria.every(c => c.isValid);
+    if (!isPasswordValid) {
+      return toast.error('Sua senha não atende a todos os critérios de segurança.');
+    }
     if (password !== confirmPassword) {
-      toast.error('As senhas não coincidem.');
-      setIsLoading(false);
-      return;
+      return toast.error('As senhas não coincidem.');
     }
 
+    setIsLoading(true);
     try {
       const response = await fetch('/api/checkout', {
         method: 'POST',
@@ -148,31 +155,21 @@ function CheckoutForm() {
           couponCode: appliedCoupon ? appliedCoupon.code : '',
         }),
       });
-
       const data = await response.json();
       if (!response.ok || !data.success) {
         throw new Error(data.message || 'Falha ao criar a sessão de checkout.');
       }
-      
       const stripe = await stripePromise;
-      if (!stripe) {
-        throw new Error('Stripe.js não foi carregado corretamente.');
-      }
+      if (!stripe) throw new Error('Stripe.js não foi carregado corretamente.');
       
-      const { error } = await stripe.redirectToCheckout({
-        sessionId: data.sessionId,
-      });
+      const { error } = await stripe.redirectToCheckout({ sessionId: data.sessionId });
       
       if (error) {
         console.error('Erro ao redirecionar para a Stripe:', error);
         toast.error(error.message || 'Ocorreu um erro ao redirecionar para o pagamento.');
       }
     } catch (error: unknown) {
-      if (error instanceof Error) {
-        toast.error(error.message);
-      } else {
-        toast.error('Ocorreu um erro desconhecido.');
-      }
+      toast.error(error instanceof Error ? error.message : 'Ocorreu um erro desconhecido.');
     } finally {
       setIsLoading(false);
     }
@@ -187,7 +184,6 @@ function CheckoutForm() {
   return (
     <div className="min-h-screen bg-brand-background py-12 px-4">
       <div className="max-w-4xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12">
-        {/* 3. Código do formulário de cadastro restaurado */}
         <div className="bg-white p-8 rounded-lg shadow-md">
           <h1 className="text-3xl font-bold text-brand-primary mb-6">Crie sua Conta</h1>
           <form onSubmit={handleSubmit} id="checkout-form" className="space-y-8">
@@ -201,6 +197,14 @@ function CheckoutForm() {
                   {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
               </div>
+              <ul className="space-y-1 text-sm">
+                {passwordCriteria.map((criterion, index) => (
+                  <li key={index} className={`flex items-center gap-2 transition-colors ${criterion.isValid ? 'text-green-600' : 'text-gray-500'}`}>
+                    {criterion.isValid ? <Check size={16} /> : <X size={16} />}
+                    <span>{criterion.text}</span>
+                  </li>
+                ))}
+              </ul>
               <div className="relative">
                 <Input id="confirmPassword" type={showConfirmPassword ? 'text' : 'password'} required value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Confirme sua senha" />
                 <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-brand-accent">
@@ -225,10 +229,7 @@ function CheckoutForm() {
           <div className="bg-white p-8 rounded-lg shadow-md sticky top-8">
             <h2 className="text-2xl font-bold text-brand-primary mb-6">Resumo da Assinatura</h2>
             <div className="space-y-4 text-brand-primary">
-              <div className="flex justify-between items-baseline">
-                <span className="font-semibold">Plano Selecionado:</span>
-                <span className="font-bold text-brand-accent">{plan.name}</span>
-              </div>
+              <div className="flex justify-between items-baseline"><span className="font-semibold">Plano Selecionado:</span><span className="font-bold text-brand-accent">{plan.name}</span></div>
               {featuresList.length > 0 && (
                 <div className="pt-2">
                   <span className="font-semibold text-sm">Benefícios incluídos:</span>
@@ -249,7 +250,6 @@ function CheckoutForm() {
                       {isApplyingCoupon ? <Loader2 className="h-4 w-4 animate-spin"/> : 'Aplicar'}
                     </Button>
                   ) : (
-                    // 4. Variante do botão corrigida
                     <Button type="button" variant="destructive" onClick={handleRemoveCoupon}>
                       <X className="h-4 w-4 mr-1"/> Remover
                     </Button>
