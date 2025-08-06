@@ -14,13 +14,9 @@ export default function PricingSection({ plans }: PricingSectionProps) {
     const featuresList: string[] = JSON.parse(plan.features);
     const isPopular = plan.name.toLowerCase().includes('essentials');
 
-    // ===================================================================
-    // NOVA LÓGICA PARA SEPARAR REAIS E CENTAVOS
-    // ===================================================================
     const priceParts = plan.price.split('.');
     const integerPart = priceParts[0];
     const decimalPart = priceParts[1] || '00';
-    // ===================================================================
 
     return (
       <div 
@@ -35,9 +31,6 @@ export default function PricingSection({ plans }: PricingSectionProps) {
         <h3 className="text-2xl font-bold text-brand-primary">{plan.name}</h3>
         {plan.description && <p className="mt-2 text-gray-500">{plan.description}</p>}
         
-        {/* =================================================================== */}
-        {/* CÓDIGO JSX ATUALIZADO PARA EXIBIR O PREÇO CORRETAMENTE             */}
-        {/* =================================================================== */}
         <p className="text-5xl font-bold my-6">
           R$ {integerPart}
           <span className="text-lg font-normal text-gray-500">,{decimalPart}/mês</span>
@@ -52,8 +45,11 @@ export default function PricingSection({ plans }: PricingSectionProps) {
           ))}
         </ul>
 
+        {/* =================================================================== */}
+        {/* CORREÇÃO APLICADA AQUI                                            */}
+        {/* =================================================================== */}
         <Link 
-          href="/signup"
+          href={`/checkout?planId=${plan.id}`}
           className="block w-full mt-8 bg-brand-accent text-white px-8 py-3 rounded-lg font-semibold text-lg hover:bg-opacity-90 transition-all text-center"
         >
           Começar Agora

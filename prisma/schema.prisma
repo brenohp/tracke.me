@@ -140,6 +140,8 @@ model Coupon {
   expiresAt     DateTime?
   active        Boolean      @default(true)
   createdAt     DateTime     @default(now())
+
+  stripeCouponId String?   @unique
 }
 
 model Notification {
