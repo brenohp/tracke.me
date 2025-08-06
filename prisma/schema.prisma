@@ -1,4 +1,4 @@
-// schema.prisma - Versão com Notificações e Fuso Horário
+// schema.prisma - Versão com Notificações, Fuso Horário e Stripe
 
 generator client {
   provider = "prisma-client-js"
@@ -37,20 +37,20 @@ model Business {
 }
 
 model User {
-  id            String         @id @default(cuid())
-  name          String
-  email         String         @unique
-  password      String
-  role          Role           @default(OWNER)
-  businessId    String
-  business      Business       @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  services      Service[]      @relation("ProfessionalsOnServices")
+  id             String         @id @default(cuid())
+  name           String
+  email          String         @unique
+  password       String
+  role           Role           @default(OWNER)
+  businessId     String
+  business       Business       @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  services       Service[]      @relation("ProfessionalsOnServices")
   availabilities Availability[]
-  timeOffs      TimeOff[]
-  appointments  Appointment[]  @relation("ProfessionalAppointments")
-  notifications Notification[]
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
+  timeOffs       TimeOff[]
+  appointments   Appointment[]  @relation("ProfessionalAppointments")
+  notifications  Notification[]
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
 }
 
 model Service {
@@ -115,16 +115,21 @@ model TimeOff {
 }
 
 model Plan {
-  id          String     @id @default(cuid())
-  name        String     @unique
-  description String?
-  price       Decimal    @db.Decimal(10, 2)
-  features    Json
-  active      Boolean    @default(true)
-  permissions Json       @default("{}")
-  businesses  Business[]
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  id            String     @id @default(cuid())
+  name          String     @unique
+  description   String?
+  price         Decimal    @db.Decimal(10, 2)
+  features      Json
+  active        Boolean    @default(true)
+  permissions   Json       @default("{}")
+  businesses    Business[]
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  // ==========================================================
+  // CAMPO ADICIONADO AQUI
+  // ==========================================================
+  stripePriceId String?    @unique
 }
 
 model Coupon {
