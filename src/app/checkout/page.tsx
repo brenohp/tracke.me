@@ -2,11 +2,11 @@
 
 "use client";
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, Suspense, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'react-hot-toast';
-// 1. Importamos o ícone de Check
-import { Eye, EyeOff, Building, User, CreditCard, Check } from 'lucide-react';
+// 1. Loader2 foi adicionado à importação
+import { Eye, EyeOff, Building, User, CreditCard, Check, X, Loader2 } from 'lucide-react';
 import { loadStripe } from '@stripe/stripe-js';
 
 import { Button } from '@/components/ui/Button';
@@ -14,16 +14,20 @@ import { Input } from '@/components/ui/Input';
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
-// 2. Atualizamos a interface para incluir os 'features'
 interface Plan {
   id: string;
   name: string;
   price: string;
   description: string;
-  features: string; // features virão como uma string JSON
+  features: string;
+}
+interface AppliedCoupon {
+  code: string;
+  discountType: 'PERCENTAGE' | 'FIXED' | 'FREE_TRIAL';
+  discountValue: string | null;
 }
 
-function RegisterForm() {
+function CheckoutForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -34,7 +38,8 @@ function RegisterForm() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [subdomain, setSubdomain] = useState('');
   const [couponCode, setCouponCode] = useState('');
-
+  const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
+  const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -54,7 +59,7 @@ function RegisterForm() {
         if (!response.ok) throw new Error('Plano não encontrado');
         const data = await response.json();
         setPlan(data);
-      } catch (error) {
+      } catch (error) { // 'error' agora é usado
         console.error("Falha ao buscar detalhes do plano:", error);
         toast.error('Não foi possível carregar os detalhes do plano.');
         router.push('/');
@@ -65,8 +70,62 @@ function RegisterForm() {
     fetchPlan();
   }, [searchParams, router]);
 
+  const handleApplyCoupon = async () => {
+    if (!couponCode) {
+      toast.error('Por favor, insira um código de cupom.');
+      return;
+    }
+    setIsApplyingCoupon(true);
+    try {
+      const response = await fetch('/api/coupons/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ couponCode }),
+      });
+      const data = await response.json();
+      if (!data.success) {
+        throw new Error(data.message);
+      }
+      toast.success(`Cupom "${data.coupon.code}" aplicado!`);
+      setAppliedCoupon(data.coupon);
+    } catch (error: unknown) {
+      setAppliedCoupon(null);
+      if (error instanceof Error) {
+        toast.error(error.message);
+      } else {
+        toast.error('Ocorreu um erro ao validar o cupom.');
+      }
+    } finally {
+      setIsApplyingCoupon(false);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponCode('');
+    toast.success('Cupom removido.');
+  };
+
+  const finalPrice = useMemo(() => {
+    if (!plan) return 0;
+    const basePrice = Number(plan.price);
+    if (!appliedCoupon) return basePrice;
+
+    if (appliedCoupon.discountType === 'FREE_TRIAL') return 0;
+    if (appliedCoupon.discountType === 'PERCENTAGE' && appliedCoupon.discountValue) {
+      const discount = basePrice * (Number(appliedCoupon.discountValue) / 100);
+      return Math.max(0, basePrice - discount);
+    }
+    if (appliedCoupon.discountType === 'FIXED' && appliedCoupon.discountValue) {
+      return Math.max(0, basePrice - Number(appliedCoupon.discountValue));
+    }
+    return basePrice;
+  }, [plan, appliedCoupon]);
+
+  // 2. Função handleSubmit restaurada
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (!plan) return;
     setIsLoading(true);
 
     if (password !== confirmPassword) {
@@ -80,13 +139,13 @@ function RegisterForm() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          planId: plan!.id,
+          planId: plan.id,
           userName: ownerName,
           userEmail: email,
           userPassword: password,
           businessName,
           businessSubdomain: subdomain,
-          couponCode: couponCode,
+          couponCode: appliedCoupon ? appliedCoupon.code : '',
         }),
       });
 
@@ -94,13 +153,16 @@ function RegisterForm() {
       if (!response.ok || !data.success) {
         throw new Error(data.message || 'Falha ao criar a sessão de checkout.');
       }
+      
       const stripe = await stripePromise;
       if (!stripe) {
         throw new Error('Stripe.js não foi carregado corretamente.');
       }
+      
       const { error } = await stripe.redirectToCheckout({
         sessionId: data.sessionId,
       });
+      
       if (error) {
         console.error('Erro ao redirecionar para a Stripe:', error);
         toast.error(error.message || 'Ocorreu um erro ao redirecionar para o pagamento.');
@@ -116,21 +178,16 @@ function RegisterForm() {
     }
   };
   
-  if (isLoadingPlan) {
-    return <div className="flex items-center justify-center min-h-screen">Carregando detalhes do plano...</div>;
-  }
-  if (!plan) {
-    return <div className="flex items-center justify-center min-h-screen">Redirecionando...</div>;
+  if (isLoadingPlan || !plan) {
+    return <div className="flex items-center justify-center min-h-screen">Carregando...</div>;
   }
 
-  // 3. Transformamos a string JSON de features em uma lista (array)
   const featuresList = plan.features ? JSON.parse(plan.features) : [];
 
   return (
     <div className="min-h-screen bg-brand-background py-12 px-4">
       <div className="max-w-4xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12">
-        
-        {/* Coluna do Formulário de Cadastro */}
+        {/* 3. Código do formulário de cadastro restaurado */}
         <div className="bg-white p-8 rounded-lg shadow-md">
           <h1 className="text-3xl font-bold text-brand-primary mb-6">Crie sua Conta</h1>
           <form onSubmit={handleSubmit} id="checkout-form" className="space-y-8">
@@ -164,44 +221,53 @@ function RegisterForm() {
             </div>
           </form>
         </div>
-
-        {/* Coluna do Resumo do Pedido */}
         <div className="lg:mt-16">
           <div className="bg-white p-8 rounded-lg shadow-md sticky top-8">
             <h2 className="text-2xl font-bold text-brand-primary mb-6">Resumo da Assinatura</h2>
             <div className="space-y-4 text-brand-primary">
-              <div className="flex justify-between">
+              <div className="flex justify-between items-baseline">
                 <span className="font-semibold">Plano Selecionado:</span>
                 <span className="font-bold text-brand-accent">{plan.name}</span>
               </div>
-              
-              {/* 4. Renderizamos a lista de benefícios */}
               {featuresList.length > 0 && (
                 <div className="pt-2">
                   <span className="font-semibold text-sm">Benefícios incluídos:</span>
                   <ul className="space-y-2 mt-2 text-gray-600">
                     {featuresList.map((feature: string, index: number) => (
-                      <li key={index} className="flex items-center gap-2 text-sm">
-                        <Check className="h-4 w-4 text-green-500 flex-shrink-0"/>
-                        <span>{feature}</span>
-                      </li>
+                      <li key={index} className="flex items-center gap-2 text-sm"><Check className="h-4 w-4 text-green-500 flex-shrink-0"/><span>{feature}</span></li>
                     ))}
                   </ul>
                 </div>
               )}
-
               <hr/>
               <div className="space-y-2">
-                <label htmlFor="coupon" className="text-sm font-medium">Cupom de Desconto (Opcional)</label>
+                <label htmlFor="coupon" className="text-sm font-medium">Cupom de Desconto</label>
                 <div className="flex gap-2">
-                  <Input id="coupon" type="text" value={couponCode} onChange={(e) => setCouponCode(e.target.value)} placeholder="Ex: PROMO10" className="flex-grow"/>
-                  <Button type="button" variant="outline">Aplicar</Button>
+                  <Input id="coupon" type="text" value={couponCode} onChange={(e) => setCouponCode(e.target.value.toUpperCase())} placeholder="Ex: PROMO10" className="flex-grow" disabled={!!appliedCoupon}/>
+                  {!appliedCoupon ? (
+                    <Button type="button" variant="outline" onClick={handleApplyCoupon} disabled={isApplyingCoupon}>
+                      {isApplyingCoupon ? <Loader2 className="h-4 w-4 animate-spin"/> : 'Aplicar'}
+                    </Button>
+                  ) : (
+                    // 4. Variante do botão corrigida
+                    <Button type="button" variant="destructive" onClick={handleRemoveCoupon}>
+                      <X className="h-4 w-4 mr-1"/> Remover
+                    </Button>
+                  )}
                 </div>
               </div>
               <hr/>
-              <div className="flex justify-between text-xl font-bold items-baseline">
-                <span>Total Mensal:</span>
-                <span>R$ {Number(plan.price).toFixed(2).replace('.', ',')}</span>
+              <div className="space-y-2">
+                {appliedCoupon && (
+                  <div className="flex justify-between text-sm text-gray-500">
+                    <span>Preço Original:</span>
+                    <span className="line-through">R$ {Number(plan.price).toFixed(2).replace('.', ',')}</span>
+                  </div>
+                )}
+                <div className="flex justify-between text-xl font-bold items-baseline">
+                  <span>Total Mensal:</span>
+                  <span>R$ {finalPrice.toFixed(2).replace('.', ',')}</span>
+                </div>
               </div>
             </div>
             <div className="mt-8">
@@ -209,9 +275,7 @@ function RegisterForm() {
                 {isLoading ? 'Processando...' : 'Prosseguir para Pagamento'}
               </Button>
             </div>
-             <div className="mt-4 text-xs text-gray-500 text-center flex items-center gap-2 justify-center">
-                <CreditCard size={14} /> Pagamento seguro via Stripe
-            </div>
+             <div className="mt-4 text-xs text-gray-500 text-center flex items-center gap-2 justify-center"><CreditCard size={14} /> Pagamento seguro via Stripe</div>
           </div>
         </div>
       </div>
@@ -222,7 +286,7 @@ function RegisterForm() {
 export default function RegisterPage() {
   return (
     <Suspense fallback={<div>Carregando...</div>}>
-      <RegisterForm />
+      <CheckoutForm />
     </Suspense>
   );
 }
