@@ -6,8 +6,9 @@ import { verifyToken } from '@/lib/session';
 import prisma from '@/lib/prisma';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
+import BillingClientView from './_components/BillingclientView';
 
-// Função para buscar os dados do plano do negócio logado
+// A função para buscar os dados continua a mesma
 async function getBillingData(businessId: string) {
   const business = await prisma.business.findUnique({
     where: { id: businessId },
@@ -36,18 +37,17 @@ export default async function BillingPage() {
   const businessData = await getBillingData(session.businessId);
 
   if (!businessData || !businessData.plan) {
-    // Redireciona para a página de planos se não tiver uma assinatura ativa
     return (
-      <div>
+      <div className="p-4 md:p-8">
         <h1 className="text-xl font-bold">Você ainda não tem um plano ativo.</h1>
-        <Link href="/#pricing" className="text-brand-accent hover:underline mt-2">
+        <Link href="/#pricing" className="text-brand-accent hover:underline mt-2 inline-block">
           Escolha um plano para começar
         </Link>
       </div>
     );
   }
 
-  // Serializa os dados para passar para o componente de cliente (que criaremos depois)
+  // Serializa os dados para passar para o componente de cliente
   const planData = {
     name: businessData.plan.name,
     price: businessData.plan.price.toString(),
@@ -70,17 +70,9 @@ export default async function BillingPage() {
         </p>
       </header>
 
-      {/* No próximo passo, vamos criar este componente de cliente */}
-      {/* <BillingClientView plan={planData} /> */}
+      {/* 2. Renderizamos o componente de cliente, passando os dados do plano */}
+      <BillingClientView plan={planData} />
 
-      {/* Por enquanto, exibimos as informações diretamente */}
-      <div className="bg-white p-6 rounded-lg shadow-md max-w-2xl">
-        <h2 className="text-xl font-bold text-brand-primary mb-4">Seu Plano Atual</h2>
-        <div className="space-y-2">
-          <p><strong>Plano:</strong> {planData.name}</p>
-          <p><strong>Preço:</strong> R$ {planData.price} / mês</p>
-        </div>
-      </div>
     </div>
   );
 }
