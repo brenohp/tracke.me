@@ -28,6 +28,8 @@ model Business {
   
   timezone            String    @default("America/Sao_Paulo")
 
+  stripeCustomerId    String?   @unique
+
   users               User[]
   services            Service[]
   clients             Client[]
@@ -126,9 +128,6 @@ model Plan {
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
 
-  // ==========================================================
-  // CAMPO ADICIONADO AQUI
-  // ==========================================================
   stripePriceId String?    @unique
 }
 
