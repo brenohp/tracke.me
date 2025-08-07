@@ -9,10 +9,6 @@ import bcrypt from 'bcryptjs';
 
 export async function POST(request: Request) {
   const body = await request.text();
-  
-  // ==========================================================
-  // CORREÇÃO APLICADA AQUI
-  // ==========================================================
   const headerPayload = await headers();
   const signature = headerPayload.get('Stripe-Signature') as string;
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
@@ -31,10 +27,22 @@ export async function POST(request: Request) {
     }
   }
 
-  // Processa o evento 'checkout.session.completed'
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object as Stripe.Checkout.Session;
     console.log('✅ Evento checkout.session.completed recebido!');
+
+    // ==========================================================
+    // CORREÇÃO APLICADA AQUI
+    // ==========================================================
+    const customer = session.customer;
+    let stripeCustomerId: string | undefined;
+
+    // 1. Verificamos o tipo de 'customer'
+    if (typeof customer === 'string') {
+      stripeCustomerId = customer;
+    } else if (customer && typeof customer === 'object' && 'id' in customer) {
+      stripeCustomerId = customer.id;
+    }
 
     const { 
       userName, 
@@ -45,10 +53,9 @@ export async function POST(request: Request) {
       planId 
     } = session.metadata || {};
 
-    // Validação para garantir que os metadados existem
-    if (!userName || !userEmail || !userPassword || !businessName || !businessSubdomain || !planId) {
-      console.error('❌ Metadados ausentes na sessão de checkout.');
-      return NextResponse.json({ error: 'Metadados ausentes.' }, { status: 400 });
+    if (!stripeCustomerId || !userName || !userEmail || !userPassword || !businessName || !businessSubdomain || !planId) {
+      console.error('❌ Metadados ou stripeCustomerId ausentes na sessão de checkout.');
+      return NextResponse.json({ error: 'Dados essenciais ausentes na sessão.' }, { status: 400 });
     }
 
     try {
@@ -58,13 +65,14 @@ export async function POST(request: Request) {
         return NextResponse.json({ success: true, message: 'Usuário já existe.' });
       }
 
-      // Cria o usuário e o negócio no banco de dados
       const hashedPassword = await bcrypt.hash(userPassword, 10);
       await prisma.business.create({
         data: {
           name: businessName,
           subdomain: businessSubdomain,
           planId: planId,
+          // 2. Usamos a variável corrigida
+          stripeCustomerId: stripeCustomerId, 
           users: {
             create: {
               name: userName,
@@ -84,6 +92,5 @@ export async function POST(request: Request) {
     }
   }
 
-  // Retorna uma resposta de sucesso para a Stripe
   return NextResponse.json({ success: true });
 }
