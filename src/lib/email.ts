@@ -23,7 +23,7 @@ export const emailService = {
   sendAccountConfirmation: async (to: string, name: string, confirmationLink: string) => {
     try {
       const { data, error } = await resend.emails.send({
-        from: 'CliendaApp <contato@clienda.app>',
+        from: 'CliendaApp <nao-responda@clienda.app>',
         to: [to],
         subject: `Bem-vindo(a) ao CliendaApp, ${name}!`,
         html: `
@@ -67,7 +67,7 @@ export const emailService = {
   sendPasswordReset: async (to: string, name: string, resetLink: string) => {
     try {
       const { data, error } = await resend.emails.send({
-        from: 'Suporte CliendaApp <suporte@clienda.app>',
+        from: 'CliendaApp <nao-responda@clienda.app>',
         to: [to],
         subject: 'Redefinição de Senha - CliendaApp',
         html: `
