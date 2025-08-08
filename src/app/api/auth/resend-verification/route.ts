@@ -7,7 +7,7 @@ import prisma from '@/lib/prisma';
 import crypto from 'crypto';
 import { emailService } from '@/lib/email';
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_DOMAIN || 'http://lvh.me:3000';
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://lvh.me:3000';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function POST(_request: Request) {
