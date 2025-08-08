@@ -38,7 +38,7 @@ export const emailService = {
             <p>Se você não se cadastrou no CliendaApp, por favor ignore este e-mail.</p>
             <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
             <p style="font-size: 0.9em; color: #555;">
-              Precisa de ajuda? <a href="mailto:suporte@clienda.app">Envie um e-mail para o nosso suporte</a>.
+              Precisa de ajuda? <a href="mailto:contato@clienda.app">Envie um e-mail para o nosso suporte</a>.
             </p>
           </div>
         `,
@@ -81,7 +81,7 @@ export const emailService = {
             </a>
             <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
             <p style="font-size: 0.9em; color: #555;">
-              Precisa de ajuda? <a href="mailto:suporte@clienda.app">Envie um e-mail para o nosso suporte</a>.
+              Precisa de ajuda? <a href="mailto:contato@clienda.app">Envie um e-mail para o nosso suporte</a>.
             </p>
           </div>
         `,
