@@ -4,7 +4,7 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://lvh.me:3000';
+const APP_URL = process.env.NEXT_PUBLIC_APP_DOMAIN || 'http://lvh.me:3000';
 
 export async function GET(request: Request) {
   // Extrai o token dos parâmetros da URL

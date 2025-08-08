@@ -6,7 +6,7 @@ import crypto from 'crypto';
 import { addHours } from 'date-fns'; // Usaremos para definir a validade do token
 import { emailService } from '@/lib/email';
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://lvh.me:3000';
+const APP_URL = process.env.NEXT_PUBLIC_APP_DOMAIN || 'http://lvh.me:3000';
 
 export async function POST(request: Request) {
   try {

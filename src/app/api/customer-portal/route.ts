@@ -6,7 +6,7 @@ import { verifyToken } from '@/lib/session';
 import { stripe } from '@/lib/stripe';
 import prisma from '@/lib/prisma';
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://lvh.me:3000';
+const APP_URL = process.env.NEXT_PUBLIC_APP_DOMAIN || 'http://lvh.me:3000';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function POST(_request: Request) {

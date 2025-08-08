@@ -5,7 +5,7 @@ import prisma from '@/lib/prisma';
 import { stripe } from '@/lib/stripe';
 import Stripe from 'stripe';
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://lvh.me:3000';
+const APP_URL = process.env.NEXT_PUBLIC_APP_DOMAIN || 'http://lvh.me:3000';
 
 // Função auxiliar para validar a força da senha
 const isPasswordSecure = (password: string): boolean => {
