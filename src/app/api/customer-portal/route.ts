@@ -14,8 +14,9 @@ export async function POST(_request: Request) {
   const token = cookieStore.get('token')?.value;
   const session = await verifyToken(token || '');
 
-  if (!session) {
-    return NextResponse.json({ success: false, message: 'Não autorizado.' }, { status: 401 });
+  // A sessão agora contém o subdomínio, conforme nosso schema
+  if (!session || !session.subdomain) {
+    return NextResponse.json({ success: false, message: 'Não autorizado ou subdomínio não encontrado na sessão.' }, { status: 401 });
   }
 
   try {
@@ -28,10 +29,22 @@ export async function POST(_request: Request) {
       return NextResponse.json({ success: false, message: 'ID de cliente da Stripe não encontrado.' }, { status: 404 });
     }
 
+    // ==========================================================
+    // CORREÇÃO APLICADA AQUI
+    // ==========================================================
+    // 1. Extraímos o domínio principal (ex: lvh.me:3000) da nossa variável de ambiente
+    const mainDomain = new URL(APP_URL).host;
+    const protocol = new URL(APP_URL).protocol;
+
+    // 2. Construímos a URL de retorno dinâmica usando o subdomínio da sessão do usuário
+    const returnUrl = `${protocol}//${session.subdomain}.${mainDomain}/dashboard/settings/billing`;
+
+    // 3. Criamos a sessão do portal com a URL de retorno correta
     const portalSession = await stripe.billingPortal.sessions.create({
       customer: business.stripeCustomerId,
-      return_url: `${APP_URL}/dashboard/settings/billing`,
+      return_url: returnUrl,
     });
+    // ==========================================================
 
     return NextResponse.json({ success: true, url: portalSession.url });
 

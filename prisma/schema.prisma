@@ -53,6 +53,9 @@ model User {
   notifications  Notification[]
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
+
+  emailVerified          DateTime? // Armazena a data em que o e-mail foi verificado
+  emailVerificationToken String?   @unique // Token de uso único para verificação
 }
 
 model Service {
