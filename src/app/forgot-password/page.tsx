@@ -18,14 +18,15 @@ export default function ForgotPasswordPage() {
     setIsLoading(true);
 
     try {
+      // Chama a API que criamos no passo anterior
       await fetch('/api/auth/forgot-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
       });
 
-      // Por segurança, sempre mostramos uma mensagem de sucesso genérica
-      // para não revelar quais e-mails estão ou não cadastrados no sistema.
+      // Por segurança, sempre mostramos uma mensagem de sucesso,
+      // mesmo que o email não exista, para não revelar informações.
       setIsSubmitted(true);
 
     } catch {
@@ -43,6 +44,7 @@ export default function ForgotPasswordPage() {
         </h1>
         
         {isSubmitted ? (
+          // Tela de sucesso após o envio
           <div className="text-center">
             <p className="text-gray-600 mt-4">
               Se um usuário com este e-mail estiver cadastrado, um link para redefinição de senha foi enviado para sua caixa de entrada.
@@ -54,6 +56,7 @@ export default function ForgotPasswordPage() {
             </div>
           </div>
         ) : (
+          // Formulário inicial
           <>
             <h2 className="text-lg text-center text-brand-accent">
               Digite seu e-mail para continuar
