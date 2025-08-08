@@ -56,6 +56,8 @@ model User {
 
   emailVerified          DateTime? // Armazena a data em que o e-mail foi verificado
   emailVerificationToken String?   @unique // Token de uso único para verificação
+  passwordResetToken       String?        @unique // Token para redefinir a senha
+  passwordResetExpires     DateTime?      // Data de expiração do token de redefinição
 }
 
 model Service {
