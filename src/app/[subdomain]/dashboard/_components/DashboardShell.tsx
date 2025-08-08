@@ -9,9 +9,18 @@ import { usePathname } from 'next/navigation';
 import { UserProfile } from './UserProfile';
 import { AuthProvider } from '@/contexts/SessionProvider';
 import type { PlanPermissions } from '../layout';
-import { NotificationBell } from './NotificationBell'; // 1. IMPORTAR O NOVO COMPONENTE
+import { NotificationBell } from './NotificationBell';
+// 1. Importamos nosso novo componente de banner
+import { VerificationBanner } from './VerificationBanner'; 
 
-export function DashboardShell({ children, permissions }: { children: ReactNode, permissions: PlanPermissions }) {
+// Definimos o tipo dos dados do usuário que vamos receber
+interface UserData {
+  email: string;
+  emailVerified: Date | null;
+}
+
+// Adicionamos a propriedade 'user' às props do componente
+export function DashboardShell({ children, permissions, user }: { children: ReactNode, permissions: PlanPermissions, user: UserData }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
@@ -19,6 +28,9 @@ export function DashboardShell({ children, permissions }: { children: ReactNode,
   useEffect(() => {
     setIsMobileMenuOpen(false);
   }, [pathname]);
+
+  // 2. Criamos uma variável para verificar se o usuário não está verificado
+  const isEmailUnverified = user && !user.emailVerified;
 
   return (
     <AuthProvider>
@@ -52,14 +64,18 @@ export function DashboardShell({ children, permissions }: { children: ReactNode,
               </h1>
             </div>
             
-            {/* 2. ADICIONAR O SINO AO LADO DO PERFIL DO USUÁRIO */}
             <div className="flex items-center gap-6">
               <NotificationBell />
               <UserProfile />
             </div>
           </header>
-          <main className="flex-1 overflow-x-hidden overflow-y-auto p-6">
-            {children}
+          <main className="flex-1 overflow-x-hidden overflow-y-auto">
+            {/* 3. Renderizamos o banner condicionalmente */}
+            {isEmailUnverified && <VerificationBanner userEmail={user.email} />}
+            
+            <div className="p-6">
+              {children}
+            </div>
           </main>
         </div>
       </div>

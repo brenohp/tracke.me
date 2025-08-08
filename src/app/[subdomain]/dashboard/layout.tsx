@@ -14,16 +14,19 @@ export interface PlanPermissions {
   hasReports?: boolean;
 }
 
+// 1. Criamos uma interface para os dados do usuário que vamos buscar
+interface UserData {
+  email: string;
+  emailVerified: Date | null;
+}
+
 export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  // CORRETO: await é necessário para cookies()
   const cookieStore = await cookies(); 
   const token = cookieStore.get('token')?.value;
-
-  // CORRETO: await é necessário para a nossa nova verifyToken()
   const session = await verifyToken(token || '');
 
   if (!session) {
@@ -35,26 +38,46 @@ export default async function DashboardLayout({
   }
 
   let permissions: PlanPermissions = {};
+  let userData: UserData | null = null;
   
   try {
-    const businessWithPlan = await prisma.business.findUnique({
-      where: { id: session.businessId },
+    // 2. Buscamos os dados do plano e do usuário em uma única consulta
+    const userWithBusiness = await prisma.user.findUnique({
+      where: { id: session.userId },
       select: {
-        plan: {
-          select: { permissions: true }
+        email: true,
+        emailVerified: true,
+        business: {
+          select: {
+            plan: {
+              select: { permissions: true }
+            }
+          }
         }
       }
     });
 
-    if (businessWithPlan?.plan?.permissions) {
-      permissions = businessWithPlan.plan.permissions as PlanPermissions;
+    if (userWithBusiness) {
+      userData = {
+        email: userWithBusiness.email,
+        emailVerified: userWithBusiness.emailVerified,
+      };
+      if (userWithBusiness.business?.plan?.permissions) {
+        permissions = userWithBusiness.business.plan.permissions as PlanPermissions;
+      }
     }
   } catch (error) {
-    console.error("Falha ao buscar permissões do plano:", error);
+    console.error("Falha ao buscar dados do usuário e do plano:", error);
+  }
+
+  if (!userData) {
+    // Se não conseguirmos encontrar os dados do usuário, redirecionamos para o login como segurança
+    redirect('/login');
   }
 
   return (
-    <DashboardShell permissions={permissions}>
+    // 3. Passamos os novos dados do usuário para o DashboardShell
+    <DashboardShell permissions={permissions} user={userData}>
       {children}
     </DashboardShell>
   );

@@ -2,56 +2,55 @@
 
 import { Resend } from 'resend';
 
-// Valida se a chave de API do Resend foi definida no ambiente.
 const resendApiKey = process.env.RESEND_API_KEY;
 if (!resendApiKey) {
   throw new Error("A variável de ambiente RESEND_API_KEY não está definida.");
 }
 
-// Inicializa o cliente do Resend com a chave de API
 const resend = new Resend(resendApiKey);
 
-// Exportamos o serviço de e-mail com as funções que vamos precisar
 export const emailService = {
 
   /**
    * Envia o e-mail de confirmação de conta para um novo usuário.
    * @param to - O endereço de e-mail do destinatário.
+   * @param name - O nome do destinatário para personalização.
    * @param confirmationLink - O link que o usuário deve clicar para confirmar a conta.
    */
-  sendAccountConfirmation: async (to: string, confirmationLink: string) => {
+  // 1. A função agora aceita o 'name' do usuário
+  sendAccountConfirmation: async (to: string, name: string, confirmationLink: string) => {
     try {
+      // 2. O corpo do e-mail foi reescrito para ser mais profissional
       const { data, error } = await resend.emails.send({
-        from: 'CliendaApp <nao-responda@clienda.app>',
+        from: 'CliendaApp <contato@clienda.app>', // Usando o e-mail que você criou
         to: [to],
-        subject: 'Confirme sua conta no CliendaApp',
+        subject: `Bem-vindo(a) ao CliendaApp, ${name}!`,
         html: `
-          <div>
-            <h1>Bem-vindo ao CliendaApp!</h1>
-            <p>Estamos felizes em ter você conosco. Por favor, clique no link abaixo para confirmar seu e-mail e ativar sua conta:</p>
-            <a href="${confirmationLink}" style="background-color: #12577B; color: white; padding: 12px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">
-              Confirmar Conta
+          <div style="font-family: Arial, sans-serif; line-height: 1.6;">
+            <h1 style="color: #021B33;">Bem-vindo(a) ao CliendaApp!</h1>
+            <p>Olá ${name},</p>
+            <p>Estamos muito felizes em ter você conosco. Falta apenas um passo para você começar a otimizar a gestão do seu negócio.</p>
+            <p>Por favor, clique no botão abaixo para confirmar seu endereço de e-mail e ativar sua conta:</p>
+            <a href="${confirmationLink}" style="background-color: #12577B; color: white; padding: 12px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 10px 0;">
+              Confirmar minha conta
             </a>
-            <p>Se você não se cadastrou no CliendaApp, por favor ignore este e-mail.</p>
+            <p>Se você não se cadastrou no CliendaApp, por favor, ignore este e-mail.</p>
+            <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
+            <p style="font-size: 0.9em; color: #555;">
+              Precisa de ajuda? <a href="mailto:suporte@clienda.app">Envie um e-mail para o nosso suporte</a>.
+            </p>
           </div>
         `,
       });
 
       if (error) {
-        // Se houver um erro da API do Resend, nós o lançamos para ser tratado
         throw error;
       }
-
       console.log('E-mail de confirmação enviado com sucesso:', data);
       return data;
-
     } catch (error) {
       console.error("Erro ao enviar e-mail de confirmação:", error);
-      // Lança um novo erro para que a função que chamou saiba que algo deu errado
       throw new Error("Não foi possível enviar o e-mail de confirmação.");
     }
   },
-
-  // Futuramente, podemos adicionar outras funções aqui, como:
-  // sendPasswordReset: async (to: string, resetLink: string) => { ... }
 };
