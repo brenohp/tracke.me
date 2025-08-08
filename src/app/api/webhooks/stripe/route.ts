@@ -6,6 +6,10 @@ import Stripe from 'stripe';
 import { stripe } from '@/lib/stripe';
 import prisma from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
+import { emailService } from '@/lib/email'; // 1. Importamos nosso serviço de e-mail
+
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://lvh.me:3000';
 
 export async function POST(request: Request) {
   const body = await request.text();
@@ -31,13 +35,9 @@ export async function POST(request: Request) {
     const session = event.data.object as Stripe.Checkout.Session;
     console.log('✅ Evento checkout.session.completed recebido!');
 
-    // ==========================================================
-    // CORREÇÃO APLICADA AQUI
-    // ==========================================================
     const customer = session.customer;
     let stripeCustomerId: string | undefined;
 
-    // 1. Verificamos o tipo de 'customer'
     if (typeof customer === 'string') {
       stripeCustomerId = customer;
     } else if (customer && typeof customer === 'object' && 'id' in customer) {
@@ -66,25 +66,47 @@ export async function POST(request: Request) {
       }
 
       const hashedPassword = await bcrypt.hash(userPassword, 10);
+      
+      // 2. Geramos um token de verificação seguro
+      const emailVerificationToken = crypto.randomBytes(32).toString('hex');
+
       await prisma.business.create({
         data: {
           name: businessName,
           subdomain: businessSubdomain,
           planId: planId,
-          // 2. Usamos a variável corrigida
-          stripeCustomerId: stripeCustomerId, 
+          stripeCustomerId: stripeCustomerId,
           users: {
             create: {
               name: userName,
               email: userEmail,
               password: hashedPassword,
               role: 'OWNER',
+              // 3. Salvamos o token no banco junto com o usuário
+              emailVerificationToken: emailVerificationToken, 
             },
           },
         },
       });
 
       console.log(`✅ Negócio '${businessName}' e usuário '${userEmail}' criados com sucesso!`);
+      
+      // ===================================================================
+      // 4. LÓGICA DE ENVIO DE E-MAIL ADICIONADA
+      // ===================================================================
+      try {
+        // Construímos o link de confirmação que será enviado no e-mail
+        const confirmationLink = `${APP_URL}/api/auth/verify-email?token=${emailVerificationToken}`;
+        
+        // Chamamos nosso serviço para enviar o e-mail
+        await emailService.sendAccountConfirmation(userEmail, confirmationLink);
+        console.log(`✉️ E-mail de confirmação enviado para ${userEmail}`);
+      } catch (emailError) {
+        // Se o envio do e-mail falhar, apenas registramos o erro, mas não quebramos o fluxo.
+        // O usuário já foi criado e poderá solicitar um novo e-mail de verificação mais tarde.
+        console.error(`Falha ao enviar e-mail de confirmação para ${userEmail}:`, emailError);
+      }
+      // ===================================================================
 
     } catch (dbError) {
       console.error('❌ Erro ao salvar no banco de dados:', dbError);
