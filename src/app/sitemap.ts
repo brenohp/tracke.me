@@ -1,7 +1,7 @@
 // Caminho: src/app/sitemap.ts
 
 import { MetadataRoute } from 'next';
-import prisma from '@/lib/prisma';
+// A importação do Prisma foi removida, pois não está a ser utilizada.
 
 // Esta função gera o ficheiro sitemap.xml em tempo de build
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
@@ -27,22 +27,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   /*
   // 3. (Futuro) Páginas Dinâmicas do Blog
-  // Descomente esta seção quando tiver um blog.
-  // Esta parte buscaria todos os posts do seu banco de dados.
-  const posts = await prisma.post.findMany({
-    where: { published: true },
-    select: {
-      slug: true,
-      updatedAt: true,
-    },
-  });
-
-  const blogUrls = posts.map(post => ({
-    url: `${APP_URL}/blog/${post.slug}`,
-    lastModified: post.updatedAt,
-    changeFrequency: 'weekly' as const,
-    priority: 0.7,
-  }));
+  // Descomente esta seção quando tiver um blog e re-adicione a importação do prisma.
+  // const posts = await prisma.post.findMany({ ... });
+  // const blogUrls = posts.map(post => ({ ... }));
   */
 
   const allUrls = [
