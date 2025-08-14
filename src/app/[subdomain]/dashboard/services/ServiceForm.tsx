@@ -3,7 +3,7 @@
 
 import { useState, useEffect, type FormEvent } from 'react';
 import { toast } from 'react-hot-toast';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 
 type Professional = {
   id: string;
@@ -28,7 +28,6 @@ interface ServiceFormProps {
 
 export default function ServiceForm({ professionals, initialData, onSuccess }: ServiceFormProps) {
   const router = useRouter();
-  const pathname = usePathname();
   
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -102,7 +101,8 @@ export default function ServiceForm({ professionals, initialData, onSuccess }: S
         resetForm();
       }
       
-      router.push(pathname);
+      // A linha crucial para a correção:
+      router.refresh();
       
       if (onSuccess) {
         onSuccess();

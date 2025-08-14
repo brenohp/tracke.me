@@ -10,17 +10,33 @@ import { UserProfile } from './UserProfile';
 import { AuthProvider } from '@/contexts/SessionProvider';
 import type { PlanPermissions } from '../layout';
 import { NotificationBell } from './NotificationBell';
-// 1. Importamos nosso novo componente de banner
 import { VerificationBanner } from './VerificationBanner'; 
+// CORREÇÃO: A importação agora é "default", sem chaves
+import OnboardingGuide from './OnboardingGuide';
 
-// Definimos o tipo dos dados do usuário que vamos receber
+// ... o resto do arquivo permanece igual
 interface UserData {
   email: string;
   emailVerified: Date | null;
 }
 
-// Adicionamos a propriedade 'user' às props do componente
-export function DashboardShell({ children, permissions, user }: { children: ReactNode, permissions: PlanPermissions, user: UserData }) {
+interface OnboardingStatus {
+  hasServices: boolean;
+  hasClients: boolean;
+  hasAvailability: boolean;
+}
+
+export function DashboardShell({ 
+  children, 
+  permissions, 
+  user,
+  onboardingStatus 
+}: { 
+  children: ReactNode, 
+  permissions: PlanPermissions, 
+  user: UserData,
+  onboardingStatus: OnboardingStatus
+}) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
@@ -29,8 +45,8 @@ export function DashboardShell({ children, permissions, user }: { children: Reac
     setIsMobileMenuOpen(false);
   }, [pathname]);
 
-  // 2. Criamos uma variável para verificar se o usuário não está verificado
   const isEmailUnverified = user && !user.emailVerified;
+  const isOnboardingComplete = Object.values(onboardingStatus).every(Boolean);
 
   return (
     <AuthProvider>
@@ -70,10 +86,10 @@ export function DashboardShell({ children, permissions, user }: { children: Reac
             </div>
           </header>
           <main className="flex-1 overflow-x-hidden overflow-y-auto">
-            {/* 3. Renderizamos o banner condicionalmente */}
             {isEmailUnverified && <VerificationBanner userEmail={user.email} />}
             
             <div className="p-6">
+              {!isOnboardingComplete && <OnboardingGuide completedSteps={onboardingStatus} />}
               {children}
             </div>
           </main>

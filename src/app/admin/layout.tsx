@@ -2,7 +2,8 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { verifyToken } from '@/lib/session';
-import { AdminSidebar } from './_components/AdminSidebar'; // Importa a nova sidebar
+import { AdminSidebar } from './_components/AdminSidebar';
+import { AdminHeader } from './_components/AdminHeader'; // 1. Importa o novo cabeçalho
 
 export default async function AdminLayout({
   children,
@@ -19,15 +20,12 @@ export default async function AdminLayout({
 
   return (
     <div className="flex h-screen bg-gray-100">
-      {/* A nossa nova barra lateral */}
       <AdminSidebar />
       
-      {/* Contêiner principal para o conteúdo da página */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        <header className="bg-white shadow-sm p-4 h-20 flex items-center justify-end">
-          {/* No futuro, podemos adicionar um menu de perfil de admin aqui */}
-          <span className="text-gray-600">Logado como Admin</span>
-        </header>
+        {/* 2. Substitui o <header> estático pelo novo componente interativo */}
+        <AdminHeader />
+        
         <main className="flex-1 overflow-x-hidden overflow-y-auto p-8">
           {children}
         </main>

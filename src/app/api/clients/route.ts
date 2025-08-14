@@ -1,13 +1,12 @@
 // Caminho: src/app/api/clients/route.ts
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers'; // Importa o helper de cookies
+import { cookies } from 'next/headers';
 import prisma from '@/lib/prisma';
 import { verifyToken } from '@/lib/session';
 import { revalidatePath } from 'next/cache';
 
 // Função para CADASTRAR um novo cliente (CORRIGIDA)
 export async function POST(request: Request) {
-  // Lógica de autenticação corrigida para ler o cookie
   const cookieStore = await cookies();
   const token = cookieStore.get('token')?.value;
   const session = await verifyToken(token || '');
@@ -18,7 +17,6 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    // Adicionado o campo 'observations'
     const { name, phone, email, observations } = body;
 
     if (!name) {
@@ -35,7 +33,8 @@ export async function POST(request: Request) {
       },
     });
     
-    // Revalida o cache da página de clientes para a lista atualizar
+    // CORREÇÃO: Revalida o cache do layout do dashboard para atualizar o onboarding
+    revalidatePath('/dashboard', 'layout');
     revalidatePath('/dashboard/clientes');
 
     return NextResponse.json(newClient, { status: 201 });
@@ -45,9 +44,8 @@ export async function POST(request: Request) {
   }
 }
 
-// Função para LISTAR todos os clientes (CORRIGIDA)
+// ... (o resto do arquivo GET permanece o mesmo)
 export async function GET() {
-  // Lógica de autenticação corrigida para ler o cookie
   const cookieStore = await cookies();
   const token = cookieStore.get('token')?.value;
   const session = await verifyToken(token || '');

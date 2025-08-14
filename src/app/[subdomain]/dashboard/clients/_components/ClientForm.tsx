@@ -3,9 +3,9 @@
 
 import { useState, useEffect, type FormEvent } from 'react';
 import { toast } from 'react-hot-toast';
-import { useRouter, usePathname } from 'next/navigation';
+// CORREÇÃO: Removido 'usePathname' que não era necessário
+import { useRouter } from 'next/navigation';
 
-// Tipo para os dados de um cliente que o formulário pode receber
 interface SerializableClient {
   id: string;
   name: string;
@@ -15,22 +15,19 @@ interface SerializableClient {
 }
 
 interface ClientFormProps {
-  initialData?: SerializableClient | null; // Prop opcional para dados iniciais (modo edição)
+  initialData?: SerializableClient | null;
   onSuccess?: () => void;
 }
 
 export default function ClientForm({ initialData, onSuccess }: ClientFormProps) {
   const router = useRouter();
-  const pathname = usePathname();
   
-  // Estados para controlar os campos do formulário
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [observations, setObservations] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // useEffect para preencher o formulário quando estiver no modo de edição
   useEffect(() => {
     if (initialData) {
       setName(initialData.name);
@@ -47,12 +44,11 @@ export default function ClientForm({ initialData, onSuccess }: ClientFormProps) 
     setObservations('');
   }
 
-  // handleSubmit agora lida com criar (POST) e editar (PUT)
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
     setIsLoading(true);
     
-    const isEditing = !!initialData; // Verifica se estamos a editar ou a criar
+    const isEditing = !!initialData;
 
     const clientData = {
       name,
@@ -61,7 +57,7 @@ export default function ClientForm({ initialData, onSuccess }: ClientFormProps) 
       observations,
     };
     
-    const url = isEditing ? `/api/clients/${initialData.id}` : '/api/clients';
+    const url = isEditing ? `/api/clients/${initialData!.id}` : '/api/clients';
     const method = isEditing ? 'PUT' : 'POST';
 
     try {
@@ -82,7 +78,8 @@ export default function ClientForm({ initialData, onSuccess }: ClientFormProps) 
         resetForm();
       }
       
-      router.push(pathname);
+      // CORREÇÃO: Usa router.refresh() para recarregar os dados do servidor (incluindo o layout)
+      router.refresh();
       
       if (onSuccess) {
         onSuccess();

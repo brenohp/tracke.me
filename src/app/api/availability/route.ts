@@ -63,7 +63,8 @@ export async function POST(request: Request) {
       }),
     ]);
     
-    // Revalida o cache da futura página de configurações/disponibilidade
+    // CORREÇÃO: Adicionada a revalidação do layout do dashboard
+    revalidatePath('/dashboard', 'layout');
     revalidatePath('/dashboard/settings/availability');
 
     return NextResponse.json({ message: 'Disponibilidade atualizada com sucesso.' }, { status: 200 });

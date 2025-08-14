@@ -5,7 +5,6 @@ import prisma from '@/lib/prisma';
 import { verifyToken } from '@/lib/session';
 import { revalidatePath } from 'next/cache';
 
-// A função POST permanece igual
 export async function POST(request: Request) {
   const cookieStore = await cookies();
   const token = cookieStore.get('token')?.value;
@@ -21,7 +20,7 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    const { name, description, price, durationInMinutes, professionals } = body;
+    const { name, description, price, durationInMinutes, professionals, status } = body;
 
     if (!name || !price || !durationInMinutes) {
       return NextResponse.json({ message: 'Nome, preço e duração são obrigatórios.' }, { status: 400 });
@@ -40,6 +39,7 @@ export async function POST(request: Request) {
         description,
         price,
         durationInMinutes,
+        status,
         businessId: session.businessId,
         professionals: {
           connect: professionals.map((id: string) => ({ id })),
@@ -47,6 +47,8 @@ export async function POST(request: Request) {
       },
     });
 
+    // CORREÇÃO: Revalida o cache do layout do dashboard para atualizar o onboarding
+    revalidatePath('/dashboard', 'layout');
     revalidatePath('/dashboard/services');
 
     return NextResponse.json(newService, { status: 201 });
@@ -56,7 +58,7 @@ export async function POST(request: Request) {
   }
 }
 
-// CORREÇÃO: Adicionado '_' para indicar que 'request' não é utilizado
+// ... (o resto do arquivo GET permanece o mesmo)
 export async function GET() { 
   const cookieStore = await cookies();
   const token = cookieStore.get('token')?.value;

@@ -9,7 +9,6 @@ import DashboardClientView from './_components/DashboardClientView';
 export default async function DashboardPage() {
   const cookieStore = await cookies();
   const token = cookieStore.get('token')?.value;
-  // --- CORREÇÃO: Adicionado 'await' ---
   const session = await verifyToken(token || '');
 
   if (!session) {

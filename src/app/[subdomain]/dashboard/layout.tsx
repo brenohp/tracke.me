@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { verifyToken } from '@/lib/session';
 import { DashboardShell } from './_components/DashboardShell';
 import prisma from '@/lib/prisma';
+// A importação desnecessária do OnboardingGuide foi REMOVIDA daqui.
 
 export interface PlanPermissions {
   hasPackages?: boolean;
@@ -14,10 +15,15 @@ export interface PlanPermissions {
   hasReports?: boolean;
 }
 
-// 1. Criamos uma interface para os dados do usuário que vamos buscar
 interface UserData {
   email: string;
   emailVerified: Date | null;
+}
+
+interface OnboardingStatus {
+  hasServices: boolean;
+  hasClients: boolean;
+  hasAvailability: boolean;
 }
 
 export default async function DashboardLayout({
@@ -39,9 +45,13 @@ export default async function DashboardLayout({
 
   let permissions: PlanPermissions = {};
   let userData: UserData | null = null;
+  let onboardingStatus: OnboardingStatus = {
+    hasServices: false,
+    hasClients: false,
+    hasAvailability: false,
+  };
   
   try {
-    // 2. Buscamos os dados do plano e do usuário em uma única consulta
     const userWithBusiness = await prisma.user.findUnique({
       where: { id: session.userId },
       select: {
@@ -51,6 +61,15 @@ export default async function DashboardLayout({
           select: {
             plan: {
               select: { permissions: true }
+            },
+            _count: {
+              select: {
+                services: true,
+                clients: true,
+                users: {
+                  where: { availabilities: { some: {} } }
+                }
+              }
             }
           }
         }
@@ -65,19 +84,24 @@ export default async function DashboardLayout({
       if (userWithBusiness.business?.plan?.permissions) {
         permissions = userWithBusiness.business.plan.permissions as PlanPermissions;
       }
+      if (userWithBusiness.business?._count) {
+        onboardingStatus = {
+          hasServices: userWithBusiness.business._count.services > 0,
+          hasClients: userWithBusiness.business._count.clients > 0,
+          hasAvailability: userWithBusiness.business._count.users > 0,
+        };
+      }
     }
   } catch (error) {
     console.error("Falha ao buscar dados do usuário e do plano:", error);
   }
 
   if (!userData) {
-    // Se não conseguirmos encontrar os dados do usuário, redirecionamos para o login como segurança
     redirect('/login');
   }
 
   return (
-    // 3. Passamos os novos dados do usuário para o DashboardShell
-    <DashboardShell permissions={permissions} user={userData}>
+    <DashboardShell permissions={permissions} user={userData} onboardingStatus={onboardingStatus}>
       {children}
     </DashboardShell>
   );
