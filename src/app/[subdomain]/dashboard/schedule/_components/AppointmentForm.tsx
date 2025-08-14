@@ -1,9 +1,8 @@
 // Caminho: src/app/[subdomain]/dashboard/schedule/_components/AppointmentForm.tsx
 "use client";
 
-import { useState, useEffect, type FormEvent } from 'react';
+import { useState, useEffect, type FormEvent, useRef } from 'react';
 import { toast } from 'react-hot-toast';
-// Removido: import { useRouter, usePathname } from 'next/navigation';
 
 // Tipos
 interface SelectOption {
@@ -39,8 +38,6 @@ export default function AppointmentForm({
   onSuccess,
   onDelete
 }: AppointmentFormProps) {
-  // Removido: const router = useRouter();
-  // Removido: const pathname = usePathname();
   
   const [clientId, setClientId] = useState('');
   const [serviceId, setServiceId] = useState('');
@@ -48,6 +45,13 @@ export default function AppointmentForm({
   const [startTime, setStartTime] = useState(initialStartTime || '');
   const [status, setStatus] = useState('SCHEDULED');
   const [isLoading, setIsLoading] = useState(false);
+
+  // --- ESTADOS PARA A PESQUISA DE CLIENTES (CORRIGIDO) ---
+  const [clientSearch, setClientSearch] = useState('');
+  // O estado 'selectedClientName' foi removido por ser redundante
+  const [filteredClients, setFilteredClients] = useState<SelectOption[]>([]);
+  const [isClientListOpen, setIsClientListOpen] = useState(false);
+  const clientSearchRef = useRef<HTMLDivElement>(null);
 
   const isEditing = !!initialData;
 
@@ -58,14 +62,37 @@ export default function AppointmentForm({
       setProfessionalId(initialData.professionalId);
       setStartTime(initialData.startTime.substring(0, 16));
       setStatus(initialData.status);
+      const clientName = clients.find(c => c.id === initialData.clientId)?.name || '';
+      setClientSearch(clientName);
     } else {
-      setClientId('');
-      setServiceId('');
-      setProfessionalId('');
+      resetForm();
       setStartTime(initialStartTime || '');
-      setStatus('SCHEDULED');
     }
-  }, [initialData, initialStartTime]);
+  }, [initialData, initialStartTime, clients]);
+
+  useEffect(() => {
+    if (clientSearch) {
+      setFilteredClients(
+        clients.filter(client =>
+          client.name.toLowerCase().includes(clientSearch.toLowerCase())
+        )
+      );
+    } else {
+      setFilteredClients(clients);
+    }
+  }, [clientSearch, clients]);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (clientSearchRef.current && !clientSearchRef.current.contains(event.target as Node)) {
+        setIsClientListOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [clientSearchRef]);
   
   const resetForm = () => {
     setClientId('');
@@ -73,20 +100,24 @@ export default function AppointmentForm({
     setProfessionalId('');
     setStartTime('');
     setStatus('SCHEDULED');
+    setClientSearch('');
   }
+
+  const handleClientSelect = (client: SelectOption) => {
+    setClientId(client.id);
+    setClientSearch(client.name);
+    setIsClientListOpen(false);
+  };
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
+    if (!clientId) {
+      toast.error('Por favor, selecione um cliente da lista.');
+      return;
+    }
     setIsLoading(true);
     
-    const appointmentData = {
-      clientId,
-      serviceId,
-      professionalId,
-      startTime,
-      status,
-    };
-    
+    const appointmentData = { clientId, serviceId, professionalId, startTime, status };
     const url = isEditing ? `/api/appointments/${initialData?.id}` : '/api/appointments';
     const method = isEditing ? 'PUT' : 'POST';
 
@@ -118,14 +149,41 @@ export default function AppointmentForm({
   return (
     <div>
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
+        
+        <div className="relative" ref={clientSearchRef}>
           <label htmlFor="client" className="block text-sm font-medium text-gray-700">Cliente</label>
-          <select id="client" value={clientId} onChange={(e) => setClientId(e.target.value)} required className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-brand-accent focus:border-brand-accent">
-            <option value="" disabled>Selecione um cliente</option>
-            {clients.map(client => (
-              <option key={client.id} value={client.id}>{client.name}</option>
-            ))}
-          </select>
+          <input
+            type="text"
+            id="client"
+            value={clientSearch}
+            onChange={(e) => {
+              setClientSearch(e.target.value);
+              setClientId('');
+              setIsClientListOpen(true);
+            }}
+            onFocus={() => setIsClientListOpen(true)}
+            placeholder="Digite para pesquisar um cliente..."
+            required
+            autoComplete="off"
+            className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-brand-accent focus:border-brand-accent"
+          />
+          {isClientListOpen && (
+            <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
+              {filteredClients.length > 0 ? (
+                filteredClients.map(client => (
+                  <div
+                    key={client.id}
+                    onClick={() => handleClientSelect(client)}
+                    className="px-4 py-2 text-sm text-gray-700 cursor-pointer hover:bg-gray-100"
+                  >
+                    {client.name}
+                  </div>
+                ))
+              ) : (
+                <div className="px-4 py-2 text-sm text-gray-500">Nenhum cliente encontrado.</div>
+              )}
+            </div>
+          )}
         </div>
 
         <div>
